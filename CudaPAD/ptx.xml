@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ScintillaNET>
+<Language Name="default">
+<Styles>
+<Style Name="Default" FontName="Consolas"/>
+</Styles>
+</Language>
+
+<Language Name="ptx">
+<AutoComplete FillUpCharacters=".([" SingleLineAccept="True" IsCaseSensitive="False">
+<List>
+       aaa aad aam aas adc add and call cbw
+       set setp selp slct 
+       and or xor not cnot shl shr 
+       mov ld st cvt 
+       bra call ret exit 
+       bar atom red vote 
+       bar atom red vote 
+       rcp sqrt rsqrt sin cos lg2 ex2 
+       trap brkpt 
+       sync param wide shared global 
+       exit
+       add addc sub mul mad mul24 sad div rem abs neg min max 
+       %tid %ntid %ctaid %nctaid %gridid %clock
+       .pred .s8 .s16 .s32 .s64 .u8 .u16 u32 .u64 .f16 .f32 .f64 .b8 .b16 .b32 .b64
+       .eq .ne .lt .le .gt .ge .lo .ls .hi .hs .equ .neu .ltu .leu .gtu .geu .num .nan 
+</List>
+</AutoComplete>
+
+<Lexer LexerName="cpp" LineCommentPrefix="/*" StreamCommentPrefix="/* " StreamCommentSuffix=" */" >
+<Keywords List="0" Inherit="False">
+       pred s8 s16 s32 s64 u8 u16 u32 u64 f16 f32 f64 b8 b16 b32 b64
+       eq ne lt le gt ge lo ls hi hs equ neu ltu leu gtu geu num nan 
+</Keywords>
+<Keywords List="1" Inherit="False">
+       aaa aad aam aas adc add and call cbw
+       set setp selp slct 
+       and or xor not cnot shl shr 
+       mov ld st cvt 
+       bra call ret exit 
+       bar atom red vote 
+       bar atom red vote 
+       rcp sqrt rsqrt sin cos lg2 ex2 
+       trap brkpt 
+       sync param wide shared global 
+       add addc sub mul mad mul24 sad div rem abs neg min max 
+	   cvta
+</Keywords>
+<Keywords List="2" Inherit="False">
+       %tid %ntid %ctaid %nctaid %gridid %clock
+</Keywords>
+<Keywords List="3" Inherit="False">
+       reg visible entry exit
+</Keywords>
+
+</Lexer>
+
+</Language>
+</ScintillaNET>
