@@ -44,6 +44,7 @@
             this.selectAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.findToolStripMenuItemFind = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolStripMenuItemOpenTEMPPath = new System.Windows.Forms.ToolStripMenuItem();
+            this.openNvccexeBatchScriptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolStripMenuItemOpenCodeProjectSite = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -59,7 +60,6 @@
             this.letCompilerChooseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuCompilerMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.optimizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.deviceemuToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.useFastMathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bit64ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deviceDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -74,9 +74,10 @@
             this.sm35ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sm37ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sm35ToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.sm52ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fTZFloatToZeroToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.precDIVToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.precisionSqrtprecsqrtToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.precSqrtprecsqrtToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fusedMultAddfmadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.relocatableDeviceCodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.process = new System.Diagnostics.Process();
@@ -122,6 +123,7 @@
             this.linesDrawPanel = new System.Windows.Forms.Panel();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+            this.defaultToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             toolsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -240,9 +242,10 @@
             // toolsToolStripMenuItem1
             // 
             toolsToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ToolStripMenuItemOpenTEMPPath});
+            this.ToolStripMenuItemOpenTEMPPath,
+            this.openNvccexeBatchScriptToolStripMenuItem});
             toolsToolStripMenuItem1.Name = "toolsToolStripMenuItem1";
-            toolsToolStripMenuItem1.Size = new System.Drawing.Size(48, 20);
+            toolsToolStripMenuItem1.Size = new System.Drawing.Size(47, 20);
             toolsToolStripMenuItem1.Text = "&Tools";
             // 
             // ToolStripMenuItemOpenTEMPPath
@@ -252,6 +255,13 @@
             this.ToolStripMenuItemOpenTEMPPath.Size = new System.Drawing.Size(222, 22);
             this.ToolStripMenuItemOpenTEMPPath.Text = "Open TEMP Path in Explorer";
             this.ToolStripMenuItemOpenTEMPPath.Click += new System.EventHandler(this.ToolStripMenuItemOpenTEMPPath_Click);
+            // 
+            // openNvccexeBatchScriptToolStripMenuItem
+            // 
+            this.openNvccexeBatchScriptToolStripMenuItem.Name = "openNvccexeBatchScriptToolStripMenuItem";
+            this.openNvccexeBatchScriptToolStripMenuItem.Size = new System.Drawing.Size(222, 22);
+            this.openNvccexeBatchScriptToolStripMenuItem.Text = "Open nvcc.exe Batch Script";
+            this.openNvccexeBatchScriptToolStripMenuItem.Click += new System.EventHandler(this.openNvccexeBatchScriptToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -354,8 +364,6 @@
             // 
             // optimizeDisabledO2ToolStripMenuItem
             // 
-            this.optimizeDisabledO2ToolStripMenuItem.Checked = true;
-            this.optimizeDisabledO2ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.optimizeDisabledO2ToolStripMenuItem.Name = "optimizeDisabledO2ToolStripMenuItem";
             this.optimizeDisabledO2ToolStripMenuItem.Size = new System.Drawing.Size(261, 22);
             this.optimizeDisabledO2ToolStripMenuItem.Tag = "-O0";
@@ -385,6 +393,8 @@
             // 
             // letCompilerChooseToolStripMenuItem
             // 
+            this.letCompilerChooseToolStripMenuItem.Checked = true;
+            this.letCompilerChooseToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.letCompilerChooseToolStripMenuItem.Name = "letCompilerChooseToolStripMenuItem";
             this.letCompilerChooseToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
             this.letCompilerChooseToolStripMenuItem.Tag = " ";
@@ -394,7 +404,6 @@
             // 
             this.mnuCompilerMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.optimizeToolStripMenuItem,
-            this.deviceemuToolStripMenuItem,
             this.useFastMathToolStripMenuItem,
             this.bit64ToolStripMenuItem,
             this.deviceDebugToolStripMenuItem,
@@ -402,7 +411,7 @@
             this.architectureToolStripMenuItem,
             this.fTZFloatToZeroToolStripMenuItem,
             this.precDIVToolStripMenuItem,
-            this.precisionSqrtprecsqrtToolStripMenuItem,
+            this.precSqrtprecsqrtToolStripMenuItem,
             this.fusedMultAddfmadToolStripMenuItem,
             this.relocatableDeviceCodeToolStripMenuItem});
             this.mnuCompilerMenu.Name = "mnuCompilerMenu";
@@ -412,6 +421,7 @@
             // optimizeToolStripMenuItem
             // 
             this.optimizeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.defaultToolStripMenuItem,
             this.optimizeDisabledO2ToolStripMenuItem,
             this.optimizeLowToolStripMenuItem,
             this.optimizeSizeToolStripMenuItem,
@@ -421,33 +431,24 @@
             this.optimizeToolStripMenuItem.Text = "&Optimization Level";
             this.optimizeToolStripMenuItem.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.toolStripMenuItem_DropDownItemClicked);
             // 
-            // deviceemuToolStripMenuItem
-            // 
-            this.deviceemuToolStripMenuItem.CheckOnClick = true;
-            this.deviceemuToolStripMenuItem.Enabled = false;
-            this.deviceemuToolStripMenuItem.Name = "deviceemuToolStripMenuItem";
-            this.deviceemuToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
-            this.deviceemuToolStripMenuItem.Text = "Use &Emulation Mode";
-            this.deviceemuToolStripMenuItem.ToolTipText = "Compiles the code to run in emulation mode.  All the code is run on the CPU.  Thi" +
-    "s allows uses to test their code without a supported GPU.";
-            this.deviceemuToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
-            // 
             // useFastMathToolStripMenuItem
             // 
             this.useFastMathToolStripMenuItem.CheckOnClick = true;
             this.useFastMathToolStripMenuItem.Name = "useFastMathToolStripMenuItem";
             this.useFastMathToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.useFastMathToolStripMenuItem.Tag = "";
             this.useFastMathToolStripMenuItem.Text = "Use &Fast Math";
-            this.useFastMathToolStripMenuItem.ToolTipText = "Uses less accurate (24-bit vs 32-bit) but faster math instructions.";
-            this.useFastMathToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
+            this.useFastMathToolStripMenuItem.ToolTipText = "Make use of fast math library.   Uses less accurate (24-bit vs 32-bit) but faster" +
+    " math instructions. (\'--use_fast_math\' implies \'--ftz=true --prec-div=false)";
+            this.useFastMathToolStripMenuItem.Click += new System.EventHandler(this.useFastMathToolStripMenuItem_Click);
             // 
             // bit64ToolStripMenuItem
             // 
             this.bit64ToolStripMenuItem.CheckOnClick = true;
             this.bit64ToolStripMenuItem.Name = "bit64ToolStripMenuItem";
             this.bit64ToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
-            this.bit64ToolStripMenuItem.Tag = "--machine 32";
-            this.bit64ToolStripMenuItem.Text = "64-bit";
+            this.bit64ToolStripMenuItem.Tag = "";
+            this.bit64ToolStripMenuItem.Text = "&64-bit";
             this.bit64ToolStripMenuItem.ToolTipText = "Compile for 64 bit architecture. (Default is 64 bit.)";
             this.bit64ToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
             // 
@@ -467,6 +468,7 @@
             // architectureToolStripMenuItem
             // 
             this.architectureToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.letCompilerChooseToolStripMenuItem,
             this.sm10ToolStripMenuItem,
             this.sm11ToolStripMenuItem,
             this.sm13ToolStripMenuItem,
@@ -479,7 +481,7 @@
             this.sm35ToolStripMenuItem,
             this.sm37ToolStripMenuItem,
             this.sm35ToolStripMenuItem1,
-            this.letCompilerChooseToolStripMenuItem});
+            this.sm52ToolStripMenuItem});
             this.architectureToolStripMenuItem.Name = "architectureToolStripMenuItem";
             this.architectureToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.architectureToolStripMenuItem.Text = "&Architecture";
@@ -530,8 +532,6 @@
             // 
             // sm35ToolStripMenuItem
             // 
-            this.sm35ToolStripMenuItem.Checked = true;
-            this.sm35ToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.sm35ToolStripMenuItem.Name = "sm35ToolStripMenuItem";
             this.sm35ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
             this.sm35ToolStripMenuItem.Tag = "-arch sm_35";
@@ -551,12 +551,21 @@
             this.sm35ToolStripMenuItem1.Tag = "-arch sm_50";
             this.sm35ToolStripMenuItem1.Text = "sm_50";
             // 
+            // sm52ToolStripMenuItem
+            // 
+            this.sm52ToolStripMenuItem.Name = "sm52ToolStripMenuItem";
+            this.sm52ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm52ToolStripMenuItem.Tag = "-arch sm_52";
+            this.sm52ToolStripMenuItem.Text = "sm_52";
+            // 
             // fTZFloatToZeroToolStripMenuItem
             // 
             this.fTZFloatToZeroToolStripMenuItem.CheckOnClick = true;
             this.fTZFloatToZeroToolStripMenuItem.Name = "fTZFloatToZeroToolStripMenuItem";
             this.fTZFloatToZeroToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.fTZFloatToZeroToolStripMenuItem.Text = "Float to Zero (ftz)";
+            this.fTZFloatToZeroToolStripMenuItem.ToolTipText = resources.GetString("fTZFloatToZeroToolStripMenuItem.ToolTipText");
+            this.fTZFloatToZeroToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
             // 
             // precDIVToolStripMenuItem
             // 
@@ -566,17 +575,19 @@
             this.precDIVToolStripMenuItem.Name = "precDIVToolStripMenuItem";
             this.precDIVToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.precDIVToolStripMenuItem.Text = "Precision Divide (prec-div)";
+            this.precDIVToolStripMenuItem.ToolTipText = resources.GetString("precDIVToolStripMenuItem.ToolTipText");
             this.precDIVToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
             // 
-            // precisionSqrtprecsqrtToolStripMenuItem
+            // precSqrtprecsqrtToolStripMenuItem
             // 
-            this.precisionSqrtprecsqrtToolStripMenuItem.Checked = true;
-            this.precisionSqrtprecsqrtToolStripMenuItem.CheckOnClick = true;
-            this.precisionSqrtprecsqrtToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.precisionSqrtprecsqrtToolStripMenuItem.Name = "precisionSqrtprecsqrtToolStripMenuItem";
-            this.precisionSqrtprecsqrtToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
-            this.precisionSqrtprecsqrtToolStripMenuItem.Text = "Precision Sqrt (prec-sqrt)";
-            this.precisionSqrtprecsqrtToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
+            this.precSqrtprecsqrtToolStripMenuItem.Checked = true;
+            this.precSqrtprecsqrtToolStripMenuItem.CheckOnClick = true;
+            this.precSqrtprecsqrtToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.precSqrtprecsqrtToolStripMenuItem.Name = "precSqrtprecsqrtToolStripMenuItem";
+            this.precSqrtprecsqrtToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.precSqrtprecsqrtToolStripMenuItem.Text = "Precision Sqrt (prec-sqrt)";
+            this.precSqrtprecsqrtToolStripMenuItem.ToolTipText = resources.GetString("precSqrtprecsqrtToolStripMenuItem.ToolTipText");
+            this.precSqrtprecsqrtToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
             // 
             // fusedMultAddfmadToolStripMenuItem
             // 
@@ -586,6 +597,7 @@
             this.fusedMultAddfmadToolStripMenuItem.Name = "fusedMultAddfmadToolStripMenuItem";
             this.fusedMultAddfmadToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.fusedMultAddfmadToolStripMenuItem.Text = "Fused Mult Add (fmad)";
+            this.fusedMultAddfmadToolStripMenuItem.ToolTipText = resources.GetString("fusedMultAddfmadToolStripMenuItem.ToolTipText");
             this.fusedMultAddfmadToolStripMenuItem.Click += new System.EventHandler(this.toolStripMenuItem_Click);
             // 
             // relocatableDeviceCodeToolStripMenuItem
@@ -1054,6 +1066,15 @@
             this.openFileDialog1.Filter = "NVidia Cuda File(.cu)|*.cu|All Files|*.*";
             this.openFileDialog1.Title = "Open Cuda File";
             // 
+            // defaultToolStripMenuItem
+            // 
+            this.defaultToolStripMenuItem.Checked = true;
+            this.defaultToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.defaultToolStripMenuItem.Name = "defaultToolStripMenuItem";
+            this.defaultToolStripMenuItem.Size = new System.Drawing.Size(261, 22);
+            this.defaultToolStripMenuItem.Text = "&Default (No Param)";
+            this.defaultToolStripMenuItem.ToolTipText = "No Param is specified. (defaults apply)";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1141,7 +1162,6 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem selectAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optimizeToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem deviceemuToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.SplitContainer splitContainer2;
@@ -1181,11 +1201,14 @@
         private System.Windows.Forms.ToolStripMenuItem sm37ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fTZFloatToZeroToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem precDIVToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem precisionSqrtprecsqrtToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem precSqrtprecsqrtToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fusedMultAddfmadToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem relocatableDeviceCodeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem deviceDebugToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemOpenCodeProjectSite;
+        private System.Windows.Forms.ToolStripMenuItem openNvccexeBatchScriptToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem sm52ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem defaultToolStripMenuItem;
     }
 }
 

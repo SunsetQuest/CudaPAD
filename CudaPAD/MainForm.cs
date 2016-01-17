@@ -10,10 +10,10 @@ using System.Text;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Drawing.Drawing2D;
-using Microsoft.Win32;
+using System.Diagnostics;
 using System.IO;
+using Microsoft.Win32;
 using DiffUtils;
-
 
 namespace CudaPAD
 {
@@ -36,7 +36,7 @@ namespace CudaPAD
 
         /// <summary>Calculates the running time of the compiler. It is also used to
         /// check if the compiler is active at the current moment.</summary>
-        System.Diagnostics.Stopwatch compilerTimer = new System.Diagnostics.Stopwatch();
+        Stopwatch compilerTimer = new Stopwatch();
 
         /// <summary>There were changes to txtSrc while the Cuda compiler was running.</summary>
         bool subsequentUpdateNeeded = false;
@@ -58,9 +58,6 @@ namespace CudaPAD
 
         /// <summary>The location of visual studio.</summary>
         string vsStudioPath = "";
-
-        /// <summary>The current NVCC.EXE options parameters. (i.e. -arch)</summary>
-        string currentNvccOptions;
 
         /// <summary>The path to the temp directory for CudaPAD.</summary>
         readonly string TEMP_PATH;
@@ -164,7 +161,7 @@ namespace CudaPAD
                     "data.cpp5.ii.res" 
                 })
 
-            if (System.IO.File.Exists(TEMP_PATH + @"\" + filename))
+            if (File.Exists(TEMP_PATH + @"\" + filename))
                 File.Delete(TEMP_PATH + filename);
 
 
@@ -278,44 +275,53 @@ namespace CudaPAD
 
         private void BuildNvccBatchFile()
         {
-            string oppEmulation = (deviceemuToolStripMenuItem.Checked) ? "-deviceemu " : "";
-            string oppFastMath = (useFastMathToolStripMenuItem.Checked) ? "-use_fast_math " : "";
+            StringBuilder options = new StringBuilder();
 
-            string stearingOptions =
-            "--ftz " + (fTZFloatToZeroToolStripMenuItem.Checked ? "true " : "false ") +
-            "--prec-div " + (precDIVToolStripMenuItem.Checked ? "true " : "false ") +
-            "--prec-sqrt " + (precisionSqrtprecsqrtToolStripMenuItem.Checked ? "true " : "false ") +
-            "--fmad " + (fusedMultAddfmadToolStripMenuItem.Checked ? "true " : "false ") +
-            "--relocatable-device-code " + (relocatableDeviceCodeToolStripMenuItem.Checked ? "true " : "false ");
+            if (useFastMathToolStripMenuItem.Enabled)
+                if (useFastMathToolStripMenuItem.Checked)
+                    options.Append("--use_fast_math ");
+            if (!defaultToolStripMenuItem.Checked)
+                foreach (ToolStripMenuItem mi in optimizeToolStripMenuItem.DropDownItems)
+                    if (mi.Checked)
+                    {
+                        options.Append(mi.Tag.ToString() + " ");
+                        break;
+                    }
+            if (deviceDebugToolStripMenuItem.Enabled)
+                if (deviceDebugToolStripMenuItem.Checked)
+                    options.Append("--device-debug ");
+            options.Append(bit64ToolStripMenuItem.Checked ? "-m 64 " : "-m 32 ");
+            if (fTZFloatToZeroToolStripMenuItem.Enabled)
+                options.Append("--ftz " + (fTZFloatToZeroToolStripMenuItem.Checked ? "true " : "false "));
+            if (precDIVToolStripMenuItem.Enabled)
+                options.Append("--prec-div " + (precDIVToolStripMenuItem.Checked ? "true " : "false "));
+            if (precSqrtprecsqrtToolStripMenuItem.Enabled)
+                options.Append("--prec-sqrt " + (precSqrtprecsqrtToolStripMenuItem.Checked ? "true " : "false "));
+            if (fusedMultAddfmadToolStripMenuItem.Enabled)
+                options.Append("--fmad " + (fusedMultAddfmadToolStripMenuItem.Checked ? "true " : "false ")); 
+            if (relocatableDeviceCodeToolStripMenuItem.Enabled)
+                options.Append("--relocatable-device-code " + (relocatableDeviceCodeToolStripMenuItem.Checked ? "true " : "false "));
             foreach (ToolStripMenuItem mi in architectureToolStripMenuItem.DropDownItems)
                 if (mi.Checked)
                 {
-                    stearingOptions += mi.Tag.ToString() + " ";
+                    options.Append(mi.Tag.ToString() + " ");
                     break;
                 }
-
-            string compilerBehavior = bit64ToolStripMenuItem.Checked ? "-m 64 " : "-m 32 ";
-            foreach (ToolStripMenuItem mi in optimizeToolStripMenuItem.DropDownItems)
-                if (mi.Checked)
-                {
-                    compilerBehavior += mi.Tag.ToString() + " ";
-                    break;
-                }
-            compilerBehavior += deviceDebugToolStripMenuItem.Checked ? "--device-debug " : "";
-
-
-            currentNvccOptions = oppFastMath + oppEmulation + compilerBehavior + stearingOptions;
 
             ///////// Create command line script file in temp folder ///////////
             StreamWriter sw = new StreamWriter(TEMP_PATH + @"\rtcof.bat");
             //to add other options we need to make this a full compile with a main
+            sw.WriteLine("REM This script is...");
+            sw.WriteLine("REM  - run on each change in the source code.");
+            sw.WriteLine("REM  - over-written whenever any settings are modified in CudaPAD.");
+            sw.WriteLine("");
             sw.WriteLine(@"call """ + vsStudioPath + @"\vc\vcvarsall.bat""");
             sw.WriteLine("del data.cubin");
             sw.WriteLine(@"set path=%CUDA_PATH%\bin;%path%");
             sw.WriteLine(@"nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" " 
-                + currentNvccOptions + " data.cu  2>rtcof.dat >info.txt "); //-Xptxas=""-v"" shows reg usage
+                + options + " data.cu  2>rtcof.dat >info.txt "); //-Xptxas=""-v"" shows reg usage
             sw.WriteLine(@"echo Command: nvcc.exe  -keep -cubin --generate-line-info -Xptxas=""-v"" "
-                + currentNvccOptions + " data.cu  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
+                + options + " data.cu  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
             sw.WriteLine("ren data.*.cubin data.cubin");
             if (cboOutType.Text == "SASS")
                 sw.WriteLine("cuobjdump -sass data.cubin > SASS.txt");
@@ -491,7 +497,7 @@ namespace CudaPAD
                 toolStripDst.Invoke((MethodInvoker)delegate
                 {
                     compileStatus.BackColor = Color.DarkGreen;
-                    compileStatus.Text = "Ready";
+                    compileStatus.Text = autoPtxCompileEnabled ? "Ready" : "Start";
                 });
 
                 txtDst.SuspendLayout();
@@ -510,7 +516,7 @@ namespace CudaPAD
                             ptxOutput = sr.ReadToEnd();
                         }
                     }
-                    catch (System.IO.FileNotFoundException)
+                    catch (FileNotFoundException)
                     {
                         MessageBox.Show("data.ptx was not found. Make sure Cuda is installed and %CUDA_PATH%\\bin\\nvcc.exe exists.");
                     }
@@ -560,8 +566,8 @@ namespace CudaPAD
                         RegexOptions.Multiline | RegexOptions.Compiled);
 
                     // prevent empty output
-                    if (String.IsNullOrEmpty(ptx_body)) ptx_body = ".entry _f {$f: exit}"; 
-                    
+                    if (String.IsNullOrEmpty(ptx_body)) ptx_body = ".entry _f {$f: exit}";
+
                     // Cleanup PTX output
                     const string regex = // @"; *|" // remove ";"
                     @"[\t ]*//<loop> .*\r\n|"    // remove unneeded comment
@@ -685,7 +691,7 @@ namespace CudaPAD
 
             // Now sort the columns
             ListViewItemColumnSorter columnSorter = new ListViewItemColumnSorter();
-            listLog.ListViewItemSorter = (System.Collections.IComparer)columnSorter;
+            listLog.ListViewItemSorter = columnSorter;
             columnSorter.int_mode = true;
             columnSorter.curColumn = listLog.Columns[1].Index; // first sort by line #
             listLog.Sort();
@@ -789,7 +795,7 @@ namespace CudaPAD
         /// <summary>Clears all the code connector lines on the screen.</summary>
         private void ClearLines()
         {
-            GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath(new Point[] { new Point { X = 0, Y = 0 } }, new Byte[] { 0 });
+            GraphicsPath path = new GraphicsPath(new Point[] { new Point { X = 0, Y = 0 } }, new Byte[] { 0 });
             linesDrawPanel.Region = new Region(path);
             path.Dispose();
         }
@@ -839,7 +845,7 @@ namespace CudaPAD
                             continue;
 
                         Point[] pts2 = { new Point(s_x, s_y), new Point(s_x + 60, s_y), new Point(d_x - 60, d_y), new Point(d_x, d_y), new Point(d_x, d_y + width), new Point(d_x - 60, d_y + width), new Point(s_x + 60, s_y + width), new Point(s_x, s_y + width), new Point(s_x, s_y) };
-                        GraphicsPath subpath = new System.Drawing.Drawing2D.GraphicsPath(pts2, types);
+                        GraphicsPath subpath = new GraphicsPath(pts2, types);
                         path.AddPath(subpath, false);
                     }
                 linesDrawPanel.Region = new Region(path);
@@ -895,7 +901,7 @@ namespace CudaPAD
         private void listLog_ColumnClick(object sender, ColumnClickEventArgs e)
         {
             ListViewItemColumnSorter columnSorter = new ListViewItemColumnSorter();
-            listLog.ListViewItemSorter = (System.Collections.IComparer)columnSorter;
+            listLog.ListViewItemSorter = columnSorter;
             columnSorter.curColumn = e.Column;
             listLog.Sort();
             listLog.ListViewItemSorter = null;
@@ -1009,6 +1015,27 @@ namespace CudaPAD
             return true;
         }
 
+        private void useFastMathToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            bool useFastMath = useFastMathToolStripMenuItem.Checked;
+
+            fTZFloatToZeroToolStripMenuItem.Enabled = !useFastMath;
+            precDIVToolStripMenuItem.Enabled = !useFastMath;
+            precSqrtprecsqrtToolStripMenuItem.Enabled = !useFastMath;
+            fusedMultAddfmadToolStripMenuItem.Enabled = !useFastMath;
+
+            // The below sets the check mark marks in front of the disabled checkboxs.
+            //if (useFastMath)
+            //{
+            //    fTZFloatToZeroToolStripMenuItem.Checked = true;
+            //    precDIVToolStripMenuItem.Checked = false;
+            //    precSqrtprecsqrtToolStripMenuItem.Checked = false;
+            //    fusedMultAddfmadToolStripMenuItem.Checked = true;
+            //}
+
+            toolStripMenuItem_Click(this, null);
+        }
+
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (String.IsNullOrWhiteSpace(curOpenCudaFile))  // ""= no name for the current file
@@ -1027,7 +1054,7 @@ namespace CudaPAD
                 sw.Flush(); sw.Close();
                 unsavedChanges = false;
                 curOpenCudaFile = saveFileDialog1.FileName;
-                this.Text = "CudaPAD - " + System.IO.Path.GetFileName(curOpenCudaFile);
+                this.Text = "CudaPAD - " + Path.GetFileName(curOpenCudaFile);
             }
         }
 
@@ -1069,7 +1096,7 @@ namespace CudaPAD
             //(txtSrc.GetLineFromCharIndex(txtSrc.SelectionStart) + 1).ToString(); 
         }
 
-        private void ReDrawLines(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void ReDrawLines(object sender, MouseEventArgs e)
         {
             ReDrawLines();
         }
@@ -1221,7 +1248,7 @@ namespace CudaPAD
         {
             string rx = @"(?!"";""|""add more here"")""(\w|;)+""";
             string toSearch = "%22" + Regex.Replace(listLog.FocusedItem.SubItems[2].Text, rx, "%22+%22") + "%22";
-            System.Diagnostics.Process.Start("http://www.google.com/search?complete=1&hl=en&q=cuda+" + toSearch);
+            Process.Start("http://www.google.com/search?complete=1&hl=en&q=cuda+" + toSearch);
         }
 
         private void toolStripMenuItem_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
@@ -1236,10 +1263,6 @@ namespace CudaPAD
                 case "optimizeToolStripMenuItem":
                     foreach (ToolStripMenuItem mi in optimizeToolStripMenuItem.DropDownItems)
                         mi.Checked = ((string)mi.Tag == (string)e.ClickedItem.Tag);
-                    break;
-
-                case "deviceemuToolStripMenuItem":
-                    deviceemuToolStripMenuItem.Checked = !deviceemuToolStripMenuItem.Checked;
                     break;
 
                 case "useFastMathToolStripMenuItem":
@@ -1263,26 +1286,32 @@ namespace CudaPAD
             SaveSrcAndExec();
         }
 
-        private void ToolStripMenuItemOpenGitHubSite_Click(object sender, EventArgs e)
-        {
-            System.Diagnostics.Process.Start(@"https://github.com/SunsetQuest/Asm4GCN");
-        }
-
-        private void ToolStripMenuItemOpenCodeProjectSite_Click(object sender, EventArgs e)
-        {
-            System.Diagnostics.Process.Start(@"http://www.codeproject.com/Articles/999744/CudaPAD");
-        }
-
         private void toolStripBtnAuto_Click(object sender, EventArgs e)
         {
             autoPtxCompileEnabled = !autoPtxCompileEnabled;
             toolStripBtnAuto.Image = autoPtxCompileEnabled ?
                 Properties.Resources.auto24x22On : Properties.Resources.auto24x22Off;
+            compileStatus.Text = autoPtxCompileEnabled ? "Ready" : "Start";
+        }
+
+        private void ToolStripMenuItemOpenGitHubSite_Click(object sender, EventArgs e)
+        {
+            Process.Start(@"https://github.com/SunsetQuest/CudaPAD");
+        }
+
+        private void ToolStripMenuItemOpenCodeProjectSite_Click(object sender, EventArgs e)
+        {
+            Process.Start(@"http://www.codeproject.com/Articles/999744/CudaPAD");
         }
 
         private void ToolStripMenuItemOpenTEMPPath_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("explorer.exe", TEMP_PATH);
+            Process.Start("explorer.exe", TEMP_PATH);
+        }
+
+        private void openNvccexeBatchScriptToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start("notepad.exe", TEMP_PATH + @"\rtcof.bat");
         }
     }
 

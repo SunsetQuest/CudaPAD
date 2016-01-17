@@ -7,11 +7,11 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("CudaPad")]
-[assembly: AssemblyDescription("A quick way to test your Cuda Code.")]
+[assembly: AssemblyDescription("A quick way to test your Cuda Code. This projected is licensed under the terms of the MIT license.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("CudaPad")]
 [assembly: AssemblyProduct("CudaPad")]
-[assembly: AssemblyCopyright("2009, 2014")]
+[assembly: AssemblyCopyright("2009, 2013, 2014, 2015, 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
