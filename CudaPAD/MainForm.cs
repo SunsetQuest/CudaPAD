@@ -14,6 +14,8 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 using DiffUtils;
+using System.Collections.Specialized;
+using System.Collections;
 
 namespace CudaPAD
 {
@@ -74,6 +76,11 @@ namespace CudaPAD
         /// <summary>Calculates the running time of the compiler. It is also used to
         /// check if the compiler is active at the current moment.</summary>
         Timer changeTimer = new Timer();
+
+        /// <summary>Contains a list of highlighted register in the PTX window.</summary>
+        Dictionary<string,int> regColors = new Dictionary<string, int>();
+
+
 
         public MainForm()
         {
@@ -574,6 +581,7 @@ namespace CudaPAD
                     + @"[\t ]*//.*__cudaparm.*(?=\r\n)|" // remove unneeded comment
                     + @" id:\d+|\+0(?=\])|"      // remove unneeded id: comments
                     + @"[\t ]*//[\t ]*(?=\r\n)|" // remove empty "//" comments
+                    + @"%|" // remove "%"
                     + @"__cudaparm_\w+(?=_\w+)|" // shorten __cudaparam_
                     + @"(?<=\$)Lt_\d+(?'tag'_\d+:?)(\r\n)?|" // shorten labels $Lt_0_22 --> $_22
                     + @"\t.loc[ \t]\d+[ \t].*\r\n"; // remove .loc 15 lines  (note: use spaces for sm_20 and higher)
@@ -625,7 +633,9 @@ namespace CudaPAD
                     {
                         SASS_body = "";
                     }
-
+                    const string regex =
+                        @"\n\tcode for sm_\d+" 
+                       + @"|\.{10,}";
                     SASS_body = Regex.Replace(SASS_body, @"\n\tcode for sm_\d+|\.{10,}", "", RegexOptions.Compiled);
                    
                     // separate multiple columns into a single column
@@ -1312,6 +1322,364 @@ namespace CudaPAD
         private void openNvccexeBatchScriptToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("notepad.exe", TEMP_PATH + @"\rtcof.bat");
+        }
+
+        private void txtDst_MouseDown(object sender, MouseEventArgs e)
+        {
+            KnownColor[] COLORS = new KnownColor[]
+            {
+                KnownColor.Blue,
+                KnownColor.Brown,
+                KnownColor.CadetBlue,
+                KnownColor.Crimson,
+                KnownColor.DarkBlue,
+                KnownColor.DarkCyan,
+                KnownColor.DarkGreen,
+                KnownColor.DarkMagenta,
+                KnownColor.DarkSlateBlue,
+                KnownColor.ForestGreen,
+                KnownColor.Goldenrod,
+                KnownColor.Gray,
+                KnownColor.Green,
+                KnownColor.Indigo,
+                KnownColor.Maroon,
+                KnownColor.MediumBlue,
+                KnownColor.MediumAquamarine,
+                KnownColor.MediumOrchid,
+                KnownColor.MediumPurple,
+                KnownColor.MediumSlateBlue,
+                KnownColor.MediumVioletRed,
+                KnownColor.Olive,
+                KnownColor.OliveDrab,
+                KnownColor.Peru,
+                KnownColor.Purple,
+                KnownColor.Red,
+                KnownColor.RoyalBlue,
+                KnownColor.SaddleBrown,
+                KnownColor.SlateGray,
+                KnownColor.Teal,
+                KnownColor.Tomato,
+                KnownColor.YellowGreen,
+            };
+
+            string curWord = txtDst.GetWordFromPosition(txtDst.CurrentPos);
+
+            if (String.IsNullOrWhiteSpace(curWord))
+                return;
+
+            if (regColors.ContainsKey(curWord))
+            {
+                txtDst.GetRange().ClearIndicator( regColors[curWord] );
+                regColors.Remove(curWord);
+            }
+            else
+            {
+                // find a color
+                int colorToUse = 0;
+                BitArray used = new BitArray(32);
+                foreach (var r in regColors)
+                    used[r.Value] = true;
+                for (int i = 0; i < 32; i++)
+                    if (!used[i])
+                    {
+                        colorToUse = i;
+                        break;
+                    }
+
+                //add entry
+                regColors.Add(curWord, colorToUse);
+
+                // add to screen
+                int NUM = colorToUse;
+                txtDst.GetRange().ClearIndicator(NUM);
+                // Update indicator appearance
+                txtDst.Indicators[NUM].Style = ScintillaNET.IndicatorStyle.StraightBox;
+                txtDst.Indicators[NUM].OutlineAlpha = 100;
+                txtDst.Indicators[NUM].Alpha = 50;
+                txtDst.Indicators[NUM].Color = Color.FromKnownColor(COLORS[colorToUse]);
+
+                //txtDst.GetRange(100, 120).SetIndicator(NUM);
+
+                IList<ScintillaNET.Range> ranges = txtDst.FindReplace.FindAll(curWord, ScintillaNET.SearchFlags.WholeWord);
+                foreach (ScintillaNET.Range range in ranges)
+                    range.SetIndicator(NUM);
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //// not used: 3 7 8 9 12 13 14 15 17 18 20-31 33-39
+            //int start = 35;
+            //int val = start;
+
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Red);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Green);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Purple);
+            //var t = txtDst.Lexing.StyleNameMap;
+
+            ////for (int i = 0; i < 200; i++)
+            ////{
+            ////    txtDst.Styles[i].Reset();
+            ////}
+
+
+
+
+            //txtDst.Styles[3].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            ////txtDst.Styles[4].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[7].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[8].BackColor = Color.FromKnownColor(KnownColor.Yellow);
+            //txtDst.Styles[9].BackColor = Color.FromKnownColor(KnownColor.Purple);
+            //txtDst.Styles[12].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[13].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[14].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[15].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[17].BackColor = Color.FromKnownColor(KnownColor.Yellow);
+            //txtDst.Styles[18].BackColor = Color.FromKnownColor(KnownColor.Purple);
+            //txtDst.Styles[20].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[21].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[22].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[23].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[24].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[25].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[26].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[27].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[28].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[29].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[30].BackColor = Color.FromKnownColor(KnownColor.DarkGreen);
+            //txtDst.Styles[31].BackColor = Color.FromKnownColor(KnownColor.DarkMagenta);
+            ////txtDst.Styles[32].BackColor = Color.FromKnownColor(KnownColor.DarkSlateBlue);
+            //txtDst.Styles[33].BackColor = Color.FromKnownColor(KnownColor.ForestGreen);
+            //txtDst.Styles[34].BackColor = Color.FromKnownColor(KnownColor.Goldenrod);
+            //txtDst.Styles[35].BackColor = Color.FromKnownColor(KnownColor.Gray);
+            //txtDst.Styles[36].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[37].BackColor = Color.FromKnownColor(KnownColor.Indigo);
+            //txtDst.Styles[38].BackColor = Color.FromKnownColor(KnownColor.Maroon);
+            //txtDst.Styles[39].BackColor = Color.FromKnownColor(KnownColor.MediumBlue);
+            //txtDst.Styles[40].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[41].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[42].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[43].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[44].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[45].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[46].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[47].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[48].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[49].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[50].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[51].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[52].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[53].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[54].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[55].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[56].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[57].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[58].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[59].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[60].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[61].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[62].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[63].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[64].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[65].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[66].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[67].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[68].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[69].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[70].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[71].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[72].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[73].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[74].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[75].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[76].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[77].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[78].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[79].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[80].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[81].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[82].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[83].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[84].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[85].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[86].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[87].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[88].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[89].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[90].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[91].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[92].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[93].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[94].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[95].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[96].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[97].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[98].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[99].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[107].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[108].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[109].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[110].BackColor = Color.FromKnownColor(KnownColor.Yellow);
+            //txtDst.Styles[111].BackColor = Color.FromKnownColor(KnownColor.Purple);
+            //txtDst.Styles[112].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[113].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[114].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[115].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[117].BackColor = Color.FromKnownColor(KnownColor.Yellow);
+            //txtDst.Styles[118].BackColor = Color.FromKnownColor(KnownColor.Purple);
+            //txtDst.Styles[120].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[121].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[122].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[123].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[124].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[125].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[126].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[127].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[128].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[129].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[130].BackColor = Color.FromKnownColor(KnownColor.DarkGreen);
+            //txtDst.Styles[131].BackColor = Color.FromKnownColor(KnownColor.DarkMagenta);
+            //txtDst.Styles[132].BackColor = Color.FromKnownColor(KnownColor.DarkSlateBlue);
+            //txtDst.Styles[133].BackColor = Color.FromKnownColor(KnownColor.ForestGreen);
+            //txtDst.Styles[134].BackColor = Color.FromKnownColor(KnownColor.Goldenrod);
+            //txtDst.Styles[135].BackColor = Color.FromKnownColor(KnownColor.Gray);
+            //txtDst.Styles[136].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[137].BackColor = Color.FromKnownColor(KnownColor.Indigo);
+            //txtDst.Styles[138].BackColor = Color.FromKnownColor(KnownColor.Maroon);
+            //txtDst.Styles[139].BackColor = Color.FromKnownColor(KnownColor.MediumBlue);
+            //txtDst.Styles[140].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[141].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[142].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[143].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[144].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[145].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[146].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[147].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[148].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[149].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[150].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[151].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[152].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[153].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[154].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[155].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[156].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[157].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[158].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[159].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[160].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[161].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[162].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[163].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[164].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[165].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[166].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[167].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[168].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[169].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[170].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[171].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[172].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[173].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[174].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[175].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[176].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[177].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[178].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[179].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[180].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[181].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[182].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[183].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[184].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[185].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[186].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[187].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[188].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[189].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            //txtDst.Styles[190].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[191].BackColor = Color.FromKnownColor(KnownColor.Red);
+            //txtDst.Styles[192].BackColor = Color.FromKnownColor(KnownColor.Green);
+            //txtDst.Styles[193].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[194].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            //txtDst.Styles[195].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            //txtDst.Styles[196].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            //txtDst.Styles[197].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            //txtDst.Styles[198].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            //txtDst.Styles[199].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Blue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Brown);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Crimson);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkGreen);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkMagenta);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkSlateBlue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.ForestGreen);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Goldenrod);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Gray);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Green);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Indigo);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Maroon);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumBlue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumAquamarine);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumOrchid);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumPurple);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumSlateBlue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumVioletRed);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Olive);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.OliveDrab);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Peru);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Purple);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Red);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.RoyalBlue);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.SaddleBrown);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.SlateGray);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Teal);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Tomato);
+            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.YellowGreen);
+
+
+            ////txtDst.Lexing.StyleNameMap.Add("Reg0", 5);
+            ////txtDst.Lexing.StyleNameMap.Add("1", 6);
+            //txtDst.Lexing.StyleNameMap.Add("2", 7);
+            ////txtDst.Lexing.SetProperty("Reg0", +i.ToString());
+
+            ////txtDst.ConfigurationManager.Configure();
+            ////txtDst.Refresh();
+            //txtDst.Indicators.
+            ////int val2 = 0;
+            ////foreach (var r in regColors)
+            ////    txtDst.Lexing.SetKeywords(val2++, r.Key);
+
+            //for (int i = 0; i < 199; i++)
+            //{
+            //    txtDst.Lexing.SetKeywords(i, "f"+i.ToString());
+            //}
+
+            ////for (int i = 0; i < 200; i++)
+            ////{
+            ////    txtDst.Styles[i].Apply(100);
+            ////}
+
+
+            //txtDst.Lexing.Colorize();
         }
     }
 

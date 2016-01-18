@@ -1,11 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ScintillaNET>
-<Language Name="default">
-<Styles>
-<Style Name="Default" FontName="Consolas"/>
-</Styles>
-</Language>
-
 <Language Name="ptx">
 <AutoComplete FillUpCharacters=".([" SingleLineAccept="True" IsCaseSensitive="False">
 <List>
@@ -26,7 +20,6 @@
        .eq .ne .lt .le .gt .ge .lo .ls .hi .hs .equ .neu .ltu .leu .gtu .geu .num .nan 
 </List>
 </AutoComplete>
-
 <Lexer LexerName="cpp" LineCommentPrefix="/*" StreamCommentPrefix="/* " StreamCommentSuffix=" */" >
 <Keywords List="0" Inherit="False">
        pred s8 s16 s32 s64 u8 u16 u32 u64 f16 f32 f64 b8 b16 b32 b64
@@ -47,13 +40,10 @@
 	   cvta
 </Keywords>
 <Keywords List="2" Inherit="False">
-       %tid %ntid %ctaid %nctaid %gridid %clock
 </Keywords>
 <Keywords List="3" Inherit="False">
-       reg visible entry exit
+  entry exit reg visible tid ntid ctaid nctaid gridid clock
 </Keywords>
-
 </Lexer>
-
 </Language>
 </ScintillaNET>

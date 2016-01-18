@@ -60,6 +60,7 @@
             this.letCompilerChooseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuCompilerMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.optimizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.defaultToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.useFastMathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bit64ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deviceDebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -123,7 +124,6 @@
             this.linesDrawPanel = new System.Windows.Forms.Panel();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.defaultToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             toolsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -176,7 +176,7 @@
             // 
             // redoToolStripMenuItem
             // 
-            this.redoToolStripMenuItem.Image = global::CudaPAD.Properties.Resources.Redo_16x;
+            this.redoToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("redoToolStripMenuItem.Image")));
             this.redoToolStripMenuItem.Name = "redoToolStripMenuItem";
             this.redoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y)));
             this.redoToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
@@ -232,7 +232,7 @@
             // 
             // findToolStripMenuItemFind
             // 
-            this.findToolStripMenuItemFind.Image = global::CudaPAD.Properties.Resources.Find_5650;
+            this.findToolStripMenuItemFind.Image = ((System.Drawing.Image)(resources.GetObject("findToolStripMenuItemFind.Image")));
             this.findToolStripMenuItemFind.Name = "findToolStripMenuItemFind";
             this.findToolStripMenuItemFind.ShortcutKeyDisplayString = "Ctrl+F";
             this.findToolStripMenuItemFind.Size = new System.Drawing.Size(146, 22);
@@ -250,7 +250,7 @@
             // 
             // ToolStripMenuItemOpenTEMPPath
             // 
-            this.ToolStripMenuItemOpenTEMPPath.Image = global::CudaPAD.Properties.Resources.Folder_special__5843_16x;
+            this.ToolStripMenuItemOpenTEMPPath.Image = ((System.Drawing.Image)(resources.GetObject("ToolStripMenuItemOpenTEMPPath.Image")));
             this.ToolStripMenuItemOpenTEMPPath.Name = "ToolStripMenuItemOpenTEMPPath";
             this.ToolStripMenuItemOpenTEMPPath.Size = new System.Drawing.Size(222, 22);
             this.ToolStripMenuItemOpenTEMPPath.Text = "Open TEMP Path in Explorer";
@@ -276,7 +276,7 @@
             // 
             // ToolStripMenuItemOpenCodeProjectSite
             // 
-            this.ToolStripMenuItemOpenCodeProjectSite.Image = global::CudaPAD.Properties.Resources.codeProject2;
+            this.ToolStripMenuItemOpenCodeProjectSite.Image = ((System.Drawing.Image)(resources.GetObject("ToolStripMenuItemOpenCodeProjectSite.Image")));
             this.ToolStripMenuItemOpenCodeProjectSite.Name = "ToolStripMenuItemOpenCodeProjectSite";
             this.ToolStripMenuItemOpenCodeProjectSite.Size = new System.Drawing.Size(184, 22);
             this.ToolStripMenuItemOpenCodeProjectSite.Text = "CodeProject Website";
@@ -284,7 +284,7 @@
             // 
             // ToolStripMenuItemOpenGitHubSite
             // 
-            ToolStripMenuItemOpenGitHubSite.Image = global::CudaPAD.Properties.Resources.GitHub2;
+            ToolStripMenuItemOpenGitHubSite.Image = ((System.Drawing.Image)(resources.GetObject("ToolStripMenuItemOpenGitHubSite.Image")));
             ToolStripMenuItemOpenGitHubSite.Name = "ToolStripMenuItemOpenGitHubSite";
             ToolStripMenuItemOpenGitHubSite.Size = new System.Drawing.Size(184, 22);
             ToolStripMenuItemOpenGitHubSite.Text = "GitHub Website";
@@ -339,6 +339,7 @@
             this.txtDst.ZoomFactorChanged += new System.EventHandler(this.txtDst_ZoomChanged);
             this.txtDst.FontChanged += new System.EventHandler(this.ReDrawLines);
             this.txtDst.Enter += new System.EventHandler(this.txtDst_Enter);
+            this.txtDst.MouseDown += new System.Windows.Forms.MouseEventHandler(this.txtDst_MouseDown);
             this.txtDst.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.txtDst_PreviewKeyDown);
             // 
             // optimizeLowToolStripMenuItem
@@ -430,6 +431,15 @@
             this.optimizeToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.optimizeToolStripMenuItem.Text = "&Optimization Level";
             this.optimizeToolStripMenuItem.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.toolStripMenuItem_DropDownItemClicked);
+            // 
+            // defaultToolStripMenuItem
+            // 
+            this.defaultToolStripMenuItem.Checked = true;
+            this.defaultToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.defaultToolStripMenuItem.Name = "defaultToolStripMenuItem";
+            this.defaultToolStripMenuItem.Size = new System.Drawing.Size(261, 22);
+            this.defaultToolStripMenuItem.Text = "&Default (No Param)";
+            this.defaultToolStripMenuItem.ToolTipText = "No Param is specified. (defaults apply)";
             // 
             // useFastMathToolStripMenuItem
             // 
@@ -990,7 +1000,7 @@
             // 
             this.toolStripBtnAuto.BackColor = System.Drawing.SystemColors.Control;
             this.toolStripBtnAuto.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolStripBtnAuto.Image = global::CudaPAD.Properties.Resources.auto24x22On;
+            this.toolStripBtnAuto.Image = ((System.Drawing.Image)(resources.GetObject("toolStripBtnAuto.Image")));
             this.toolStripBtnAuto.ImageTransparentColor = System.Drawing.Color.White;
             this.toolStripBtnAuto.Name = "toolStripBtnAuto";
             this.toolStripBtnAuto.Size = new System.Drawing.Size(28, 22);
@@ -1040,7 +1050,7 @@
             // 
             this.txtCompileTime.AutoSize = false;
             this.txtCompileTime.Name = "txtCompileTime";
-            this.txtCompileTime.Size = new System.Drawing.Size(35, 17);
+            this.txtCompileTime.Size = new System.Drawing.Size(50, 17);
             this.txtCompileTime.Text = "--";
             this.txtCompileTime.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -1065,15 +1075,6 @@
             this.openFileDialog1.DefaultExt = "cu";
             this.openFileDialog1.Filter = "NVidia Cuda File(.cu)|*.cu|All Files|*.*";
             this.openFileDialog1.Title = "Open Cuda File";
-            // 
-            // defaultToolStripMenuItem
-            // 
-            this.defaultToolStripMenuItem.Checked = true;
-            this.defaultToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.defaultToolStripMenuItem.Name = "defaultToolStripMenuItem";
-            this.defaultToolStripMenuItem.Size = new System.Drawing.Size(261, 22);
-            this.defaultToolStripMenuItem.Text = "&Default (No Param)";
-            this.defaultToolStripMenuItem.ToolTipText = "No Param is specified. (defaults apply)";
             // 
             // MainForm
             // 
