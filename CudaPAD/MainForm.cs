@@ -1,6 +1,6 @@
 ﻿// CudaPAD PTX/SASS viewer for NVidia's Cuda
 // This projected is licensed under the terms of the MIT license.
-// Copyright (c) 2009, 2013, 2014, 2015 Ryan S. White
+// Copyright (c) 2009, 2013, 2014, 2015, 2016 Ryan S. White
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,6 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 using DiffUtils;
-using System.Collections.Specialized;
 using System.Collections;
 
 namespace CudaPAD
@@ -28,13 +27,13 @@ namespace CudaPAD
         Regex regExCleaner;
 
         /// <summary>A snapshot of the cleaned txtSrc.txt. (last txtSrc key-press)</summary>
-        String lastCleanedSrc;
+        string lastCleanedSrc;
 
         /// <summary>A snapshot of the cleaned txtSrc.txt that was compiled.</summary>
-        String lastCompiledCleanedSrc;
+        string lastCompiledCleanedSrc;
 
         /// <summary>The most recent compiler output of PTX code.</summary>
-        String lastOutput;
+        string lastOutput;
 
         /// <summary>Calculates the running time of the compiler. It is also used to
         /// check if the compiler is active at the current moment.</summary>
@@ -77,10 +76,10 @@ namespace CudaPAD
         /// check if the compiler is active at the current moment.</summary>
         Timer changeTimer = new Timer();
 
-        /// <summary>Contains a list of highlighted register in the PTX window.</summary>
-        Dictionary<string,int> regColors = new Dictionary<string, int>();
+        /// <summary>Contains a list of words or registers to highlight Key:Search_Word Val:Color.</summary>
+        Dictionary<string,int> WordsToHighlight = new Dictionary<string, int>();
 
-
+        Regex cleanupRegEx; 
 
         public MainForm()
         {
@@ -99,7 +98,7 @@ namespace CudaPAD
                         string.Format(@"{0}\{1}.{2}", (isExpress) ? visualCSharpExpressRegistryKeyPath : visualStudioRegistryKeyPath, version.Major, version.Minor));
                     if (vsVersionRegistryKey == null) { continue; }
                     string path = vsVersionRegistryKey.GetValue("InstallDir", string.Empty).ToString();
-                    if (!String.IsNullOrEmpty(path))
+                    if (!string.IsNullOrEmpty(path))
                     {
                         path = Directory.GetParent(path).Parent.Parent.FullName;
                         if (File.Exists(path + @"\VC\bin\cl.exe") && File.Exists(path + @"\VC\vcvarsall.bat"))
@@ -109,18 +108,18 @@ namespace CudaPAD
                         }
                     }
                 }
-                if (!String.IsNullOrEmpty(vsStudioPath)) 
+                if (!string.IsNullOrEmpty(vsStudioPath)) 
                     break;
             }
-
-
-            if (String.IsNullOrEmpty(vsStudioPath))
+            
+            if (string.IsNullOrEmpty(vsStudioPath))
                 if (MessageBox.Show(this, "The cl.exe and//or vcvarsall.bat cannot be found in the Visual " 
                     + "Studio directory. Please download Visual Studio from Microsoft's website. \nDo still "
                     + "wish to continue although CudaPAD may not run correctly?",
                     "Missing Cuda Compiler", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
                     Application.Exit();
+
 
             /////////// SETUP TEMP\cupad09 FOLDER ///////////
             // Set All the Paths for CLEXE_PATH, and TEMP_PATH
@@ -174,8 +173,23 @@ namespace CudaPAD
 
             // Initialize some random stuff
             InitializeComponent();
-            this.Icon = Properties.Resources.PTXIcon48x48x8Only;
+            Icon = Properties.Resources.PTXIcon48x48x8Only;
             SetPanelSize();
+            cleanupRegEx = new Regex( 
+                // @"; *|"                              // remove ";"
+                @"[\t ]*//<loop> .*\r\n|"               // remove unneeded comment
+                + @"[\t ]*//.*__cudaparm.*(?=\r\n)|"    // remove unneeded comment
+                + @" id:\d+|\+0(?=\])|"                 // remove unneeded id: comments
+                + @"[\t ]*//[\t ]*(?=\r\n)|"            // remove empty "//" comments 
+                + @"((?<=\r\n[A-Z]+\d+_\d+:)\r\n)|"     // remove return key after label (added 1/24/2016)
+                + @"%|"                                 // remove "%" (added 1/17/2016)
+                + @"[\t ]\.file[\t ]\d+[\t ]\"".*(?=\r\n)|" // remove 	.file	1 "C:\\....."
+                + @"\r\n[\t ]*\r\n[\t ]*(?=\r\n)|"      // remove two blank lines in a row (added 1/24/2016)
+                + @"__cudaparm_\w+(?=_\w+)|"            // shorten __cudaparam_
+                + @"(?<=\$)Lt_\d+(?'tag'_\d+:?)(\r\n)?|"// shorten labels $Lt_0_22 --> $_22
+                + @"\t// inline asm\r\n|"               // remove "// inline asm" lines (added 1/24/2016)
+                + @"\t.loc[ \t]\d+[ \t].*\r\n"          // remove .loc 15 lines  (note: use spaces for sm_20 and higher)                
+                , RegexOptions.Multiline | RegexOptions.Compiled);
 
 
             /////////// Setup RegExCleaner ///////////
@@ -196,10 +210,10 @@ namespace CudaPAD
             foreach (string arg in Environment.GetCommandLineArgs())
             {
                 OpenFile(arg);
-                if (!String.IsNullOrEmpty(curOpenCudaFile))
+                if (!string.IsNullOrEmpty(curOpenCudaFile))
                     break;
             }
-            if (String.IsNullOrEmpty(curOpenCudaFile))
+            if (string.IsNullOrEmpty(curOpenCudaFile))
             {
                 StringBuilder sb = new StringBuilder(2000);
                 sb.AppendLine(@"/* Welcome to CudaPAD. */");
@@ -208,13 +222,13 @@ namespace CudaPAD
                 sb.AppendLine(@"extern ""C"" __global__ void timedReduction(const float * input, float * output, clock_t * timer)");
                 sb.AppendLine(@"{");
                 sb.AppendLine(@"    extern __shared__ float shared[];");
-                sb.AppendLine(@"    const char* some_string = ""testing   123"";");
+                sb.AppendLine(@"    const char* some_string = ""some unused text"";");
                 sb.AppendLine(@"    const int tid = threadIdx.x;");
                 sb.AppendLine(@"    const int bid = blockIdx.x;");
                 sb.AppendLine(@"");
                 sb.AppendLine(@"    if (tid == 0) timer[bid] = clock();");
                 sb.AppendLine(@"");
-                sb.AppendLine(@"    // Copy input.");
+                sb.AppendLine(@"    // Copy input");
                 sb.AppendLine(@"    shared[tid] = input[tid];");
                 sb.AppendLine(@"    shared[tid + blockDim.x] = input[tid + blockDim.x];");
                 sb.AppendLine(@"");
@@ -234,14 +248,13 @@ namespace CudaPAD
                 sb.AppendLine(@"        }");
                 sb.AppendLine(@"    }");
                 sb.AppendLine(@"");
-                sb.AppendLine(@"    // Write result.");
+                sb.AppendLine(@"    // Write result");
                 sb.AppendLine(@"    if (tid == 0) output[bid] = shared[0];");
                 sb.AppendLine(@"    __syncthreads();");
                 sb.AppendLine(@"    if (tid == 0) timer[bid+gridDim.x] = clock();");
                 sb.AppendLine(@"}");
                 txtSrc.AppendText(sb.ToString());
             }
-
 
             txtDst.CurrentPos = 3;
             LinesEnabled = true;
@@ -273,10 +286,7 @@ namespace CudaPAD
             
             const string RegExNoNewline = RegExWithNewline + @"|[\r\n][\r\n\t ]*"; // empty lines
 
-            if (removeCarrageReturns)
-                regExCleaner = new Regex(RegExNoNewline, RegexOptions.Compiled);
-            else
-                regExCleaner = new Regex(RegExWithNewline, RegexOptions.Compiled);
+            regExCleaner = new Regex(removeCarrageReturns?RegExNoNewline: RegExWithNewline, RegexOptions.Compiled);
         }
 
 
@@ -349,7 +359,7 @@ namespace CudaPAD
         {
             changeTimer.Stop(); 
             
-            String cleaned = regExCleaner.Replace(txtSrc.Text, "${1}");
+            string cleaned = regExCleaner.Replace(txtSrc.Text, "${1}");
             if (lastCleanedSrc == cleaned)
                 return;
 
@@ -383,8 +393,8 @@ namespace CudaPAD
             StreamWriter sw = new StreamWriter(TEMP_PATH + @"\data.cu");
             sw.Write(txtSrc.Text); sw.Flush(); sw.Close();
 
-            compilerTimer.Reset(); compilerTimer.Start();
- 
+            compilerTimer.Restart();
+
             process.Start();
             compileStatus.BackColor = Color.DarkOrange;
             compileStatus.Text = "Working";
@@ -433,13 +443,15 @@ namespace CudaPAD
                 @"ptxas info[\s: \t]+Compiling entry function '\w+' for '\w+'\r\n" +
                 @"ptxas info[\s: \t]+Function properties for \w+\r\n" +
                 @"\s*(?<STACKFRAME>\d+) bytes stack frame, (?<SPILLSTORES>\d+) bytes spill stores, (?<SPILLLOADS>\d+) bytes spill loads\r\n" +
-                @"ptxas info[\s: \t]+Used (?<REGS>\d+) registers(, (?<SMEM>\d+) bytes smem)?, (?<CMEM>\d+) bytes cmem\[\d+\]\r\n" +
+                @"ptxas info[\s: \t]+Used (?<REGS>\d+) registers(, (?<SMEM>\d+) bytes smem)?(, (?<CMEM0>\d+) bytes cmem\[\d+\])?(, (?<CMEM1>\d+) bytes cmem\[\d+\])?\r\n" +
                 @"data.cu.*", RegexOptions.Compiled);
             Match m = infoCleaner.Match(logInfo);
             StringBuilder compileInfo = new StringBuilder();
             if (m.Success)
             {
-                string cMem = m.Groups["CMEM"].Success ? m.Groups["CMEM"].Captures[0].Value : "N/A";
+                string cMem = m.Groups["CMEM0"].Success ? m.Groups["CMEM0"].Captures[0].Value : "N/A";
+                if (m.Groups["CMEM1"].Success)
+                    cMem += " + " + m.Groups["CMEM1"].Captures[0].Value;
                 string sMem = m.Groups["SMEM"].Success ? m.Groups["SMEM"].Captures[0].Value : "N/A";
                 string gMem = m.Groups["GMEM"].Success ? m.Groups["GMEM"].Captures[0].Value : "N/A";
 
@@ -553,7 +565,7 @@ namespace CudaPAD
                     string ptx_body = ptxOutput.Substring(locOfStartOfBody);
 
                     // Lets check to see if there is no code (maybe there is a "struct" but no functions)
-                    if (String.IsNullOrEmpty(header)) //b/c of side effects the header would be in the body if this happens - so the header would be empty.
+                    if (string.IsNullOrEmpty(header)) //b/c of side effects the header would be in the body if this happens - so the header would be empty.
                     {
                         header = ptx_body;
                         ptx_body = ""; // "(no output to show)";
@@ -562,33 +574,22 @@ namespace CudaPAD
                     // Extract the fileNumberOfCudaFileInPTX
                     string fileNumberOfCudaFileInPTX = Regex.Match(ptxOutput, @".*\t\.file\t(?<num>\d+)\s.+\\data.cu"".*", 
                         RegexOptions.Singleline | RegexOptions.Compiled).Groups["num"].Value;
-                    if (String.IsNullOrEmpty(fileNumberOfCudaFileInPTX))
+                    if (string.IsNullOrEmpty(fileNumberOfCudaFileInPTX))
                         fileNumberOfCudaFileInPTX = "xi045nn"; //something that will never be found
-                    //    throw new ApplicationException("A #file in the PTX file could not be parsed.");
-                       
 
-                    // Fill in  //Line: __ comments
+                    // Fill in  "//Line: __ comments"
                     string regex_line = @"\t.loc\s" + fileNumberOfCudaFileInPTX + @"\s(?'line'\d+)\s\d+\r\n(?'nextline'.+)\r\n";
                     ptx_body = Regex.Replace(ptx_body, regex_line, "${nextline}	// Line: ${line}\r\n", 
                         RegexOptions.Multiline | RegexOptions.Compiled);
 
-                    // prevent empty output
-                    if (String.IsNullOrEmpty(ptx_body)) ptx_body = ".entry _f {$f: exit}";
+                    // Prevent Empty Output
+                    if (string.IsNullOrEmpty(ptx_body)) ptx_body = ".entry _f {$f: exit}";
 
                     // Cleanup PTX output
-                    const string regex = // @"; *|" // remove ";"
-                    @"[\t ]*//<loop> .*\r\n|"    // remove unneeded comment
-                    + @"[\t ]*//.*__cudaparm.*(?=\r\n)|" // remove unneeded comment
-                    + @" id:\d+|\+0(?=\])|"      // remove unneeded id: comments
-                    + @"[\t ]*//[\t ]*(?=\r\n)|" // remove empty "//" comments
-                    + @"%|" // remove "%"
-                    + @"__cudaparm_\w+(?=_\w+)|" // shorten __cudaparam_
-                    + @"(?<=\$)Lt_\d+(?'tag'_\d+:?)(\r\n)?|" // shorten labels $Lt_0_22 --> $_22
-                    + @"\t.loc[ \t]\d+[ \t].*\r\n"; // remove .loc 15 lines  (note: use spaces for sm_20 and higher)
-                    ptx_body = Regex.Replace(ptx_body, regex, "${tag}", RegexOptions.Multiline | RegexOptions.Compiled);
-
-                    // Lets remove line number and register numbers and then do a compare
-                    string toCompare = Regex.Replace(ptx_body, @"(?<=%[rfp][hl]?)\d+|(?<=// Line: )\d+|(?<=\$_)\d+", "__",RegexOptions.Compiled);
+                    ptx_body = cleanupRegEx.Replace(ptx_body, "${tag}");
+                    
+                    // Lets remove line number and register numbers and then do a compare (updated 1/24/2016)
+                    string toCompare = Regex.Replace(ptx_body, @"(?<=[rfp][hl]?)\d+|(?<=// Line: )\d+|(?<=\$_)\d+", "__",RegexOptions.Compiled);
                     ptx_body = DiffCalc(toCompare, ptx_body);
 
                     // Lets split up the PTX output into lines so we can work on one line at a time
@@ -603,7 +604,7 @@ namespace CudaPAD
                         linesInfo.Add(new LineInfo() 
                         { 
                             lineNo = i + 1, 
-                            srcLineNo = (String.IsNullOrEmpty(srcLineNo)) ? -1 : int.Parse(srcLineNo), 
+                            srcLineNo = (string.IsNullOrEmpty(srcLineNo)) ? -1 : int.Parse(srcLineNo), 
                             regRead1 = "", 
                             regRead1IsLast = false, 
                             regRead2 = "", 
@@ -634,9 +635,9 @@ namespace CudaPAD
                         SASS_body = "";
                     }
                     const string regex =
-                        @"\n\tcode for sm_\d+" 
-                       + @"|\.{10,}";
-                    SASS_body = Regex.Replace(SASS_body, @"\n\tcode for sm_\d+|\.{10,}", "", RegexOptions.Compiled);
+                        @"\n\tcode for sm_\d+|"
+                       + @"\.{10,}";
+                    SASS_body = Regex.Replace(SASS_body, regex, "", RegexOptions.Compiled);
                    
                     // separate multiple columns into a single column
                     string toCompare = Regex.Replace(SASS_body, @"R\d+|/\*(0x)?[0-9a-fA-F]+\*/", "__", RegexOptions.Compiled);
@@ -692,7 +693,7 @@ namespace CudaPAD
                 // Subtract 1 because we want 1 based (not 0 based)
                 string lineNo = listViewItem1.SubItems[1].Text;
                 int lineNoInt;
-                if (Int32.TryParse(lineNo, out lineNoInt))
+                if (int.TryParse(lineNo, out lineNoInt))
                     if (lineNoInt > 0)
                         listViewItem1.SubItems[1].Text = (lineNoInt - 1).ToString();
 
@@ -755,7 +756,6 @@ namespace CudaPAD
 
             StringBuilder ret = new StringBuilder(toDisplay.Length * 2);
 
-
             if (lastOutput == null)
             {
                 lastOutput = toCompare;
@@ -802,7 +802,7 @@ namespace CudaPAD
         }
 
 
-        /// <summary>Clears all the code connector lines on the screen.</summary>
+        /// <summary>Clears all the visual code connector lines.</summary>
         private void ClearLines()
         {
             GraphicsPath path = new GraphicsPath(new Point[] { new Point { X = 0, Y = 0 } }, new Byte[] { 0 });
@@ -811,7 +811,7 @@ namespace CudaPAD
         }
 
 
-        /// <summary>Draws visual code connecting lines that connect the Cuda code to PTX code.  These are a visual aid that help in understanding PTX.</summary>
+        /// <summary>Draws visual code connecting lines that connect the Cuda code to PTX code. These are a visual aid that help in understanding PTX.</summary>
         private void ReDrawLines()
         {
             if (!LinesEnabled)
@@ -842,7 +842,7 @@ namespace CudaPAD
                         int s_x = (int)(txtSrc.Lines[arrowInfo.srcLineNo - 1].Length * (txtSrcFontSz+1)); // get source-x width
                         s_x = Math.Min(s_x, txtSrc.Width-15); // make sure it does not start past the end of the screen
                         int s_y = (int)((arrowInfo.srcLineNo - txtSrcfirstVisible) * txtSrcRowHeight) - (txtSrcRowHeight / 2);
-                        int d_x = txtSrc.Width + 30;
+                        int d_x = txtSrc.Width + 60;
                         int d_y = (int)((arrowInfo.lineNo - txtDstfirstVisible) * txtDstRowHeight) - (txtDstRowHeight / 2);
 
                         if (s_y < (0 - txtSrcOverExtendPixels) * txtSrcRowHeight) 
@@ -923,7 +923,7 @@ namespace CudaPAD
             {
                 int line;
                 if (listLog.FocusedItem != null)
-                    if (Int32.TryParse(listLog.FocusedItem.SubItems[1].Text, out line))
+                    if (int.TryParse(listLog.FocusedItem.SubItems[1].Text, out line))
                     {
                         txtSrc.Focus();
                         txtSrc.GoTo.Line(line);
@@ -1034,7 +1034,7 @@ namespace CudaPAD
             precSqrtprecsqrtToolStripMenuItem.Enabled = !useFastMath;
             fusedMultAddfmadToolStripMenuItem.Enabled = !useFastMath;
 
-            // The below sets the check mark marks in front of the disabled checkboxs.
+            // The below sets adds checks in front of the disabled checkboxs.
             //if (useFastMath)
             //{
             //    fTZFloatToZeroToolStripMenuItem.Checked = true;
@@ -1048,7 +1048,7 @@ namespace CudaPAD
 
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrWhiteSpace(curOpenCudaFile))  // ""= no name for the current file
+            if (string.IsNullOrWhiteSpace(curOpenCudaFile))  // ""= no name for the current file
             {
                 // try to find a name for the file using the first _global_ function name
                 Match m = Regex.Match(txtSrc.Text, @"__global__\s+\w+\s+(\w+)\(");
@@ -1064,7 +1064,7 @@ namespace CudaPAD
                 sw.Flush(); sw.Close();
                 unsavedChanges = false;
                 curOpenCudaFile = saveFileDialog1.FileName;
-                this.Text = "CudaPAD - " + Path.GetFileName(curOpenCudaFile);
+                Text = "CudaPAD - " + Path.GetFileName(curOpenCudaFile);
             }
         }
 
@@ -1124,7 +1124,7 @@ namespace CudaPAD
 
         private void SetPanelSize()
         {
-            linesDrawPanel.Width = splitContainer2.Panel1.Width + 45;
+            linesDrawPanel.Width = splitContainer2.Panel1.Width + 90;
             linesDrawPanel.Height = splitContainer2.Panel1.Height - 30;
         }
 
@@ -1329,17 +1329,20 @@ namespace CudaPAD
             KnownColor[] COLORS = new KnownColor[]
             {
                 KnownColor.Blue,
-                KnownColor.Brown,
+                KnownColor.Red,
+                KnownColor.Green,
+                KnownColor.Purple,
+                KnownColor.Gray,
                 KnownColor.CadetBlue,
                 KnownColor.Crimson,
                 KnownColor.DarkBlue,
+                KnownColor.Brown,
                 KnownColor.DarkCyan,
                 KnownColor.DarkGreen,
                 KnownColor.DarkMagenta,
                 KnownColor.DarkSlateBlue,
                 KnownColor.ForestGreen,
                 KnownColor.Goldenrod,
-                KnownColor.Gray,
                 KnownColor.Green,
                 KnownColor.Indigo,
                 KnownColor.Maroon,
@@ -1352,8 +1355,6 @@ namespace CudaPAD
                 KnownColor.Olive,
                 KnownColor.OliveDrab,
                 KnownColor.Peru,
-                KnownColor.Purple,
-                KnownColor.Red,
                 KnownColor.RoyalBlue,
                 KnownColor.SaddleBrown,
                 KnownColor.SlateGray,
@@ -1364,20 +1365,20 @@ namespace CudaPAD
 
             string curWord = txtDst.GetWordFromPosition(txtDst.CurrentPos);
 
-            if (String.IsNullOrWhiteSpace(curWord))
+            if (string.IsNullOrWhiteSpace(curWord))
                 return;
 
-            if (regColors.ContainsKey(curWord))
+            if (WordsToHighlight.ContainsKey(curWord))
             {
-                txtDst.GetRange().ClearIndicator( regColors[curWord] );
-                regColors.Remove(curWord);
+                txtDst.GetRange().ClearIndicator( WordsToHighlight[curWord] );
+                WordsToHighlight.Remove(curWord);
             }
             else
             {
                 // find a color
                 int colorToUse = 0;
                 BitArray used = new BitArray(32);
-                foreach (var r in regColors)
+                foreach (var r in WordsToHighlight)
                     used[r.Value] = true;
                 for (int i = 0; i < 32; i++)
                     if (!used[i])
@@ -1386,300 +1387,24 @@ namespace CudaPAD
                         break;
                     }
 
-                //add entry
-                regColors.Add(curWord, colorToUse);
+                // add entry
+                WordsToHighlight.Add(curWord, colorToUse);
 
                 // add to screen
-                int NUM = colorToUse;
-                txtDst.GetRange().ClearIndicator(NUM);
-                // Update indicator appearance
-                txtDst.Indicators[NUM].Style = ScintillaNET.IndicatorStyle.StraightBox;
-                txtDst.Indicators[NUM].OutlineAlpha = 100;
-                txtDst.Indicators[NUM].Alpha = 50;
-                txtDst.Indicators[NUM].Color = Color.FromKnownColor(COLORS[colorToUse]);
+                txtDst.GetRange().ClearIndicator(colorToUse);
 
+                // Update indicator appearance
+                txtDst.Indicators[colorToUse].Style = ScintillaNET.IndicatorStyle.StraightBox;
+                txtDst.Indicators[colorToUse].OutlineAlpha = 100;
+                txtDst.Indicators[colorToUse].Alpha = 50;
+                txtDst.Indicators[colorToUse].Color = Color.FromKnownColor(COLORS[colorToUse]);
+                
                 //txtDst.GetRange(100, 120).SetIndicator(NUM);
 
-                IList<ScintillaNET.Range> ranges = txtDst.FindReplace.FindAll(curWord, ScintillaNET.SearchFlags.WholeWord);
+                IList <ScintillaNET.Range> ranges = txtDst.FindReplace.FindAll(curWord, ScintillaNET.SearchFlags.WholeWord);
                 foreach (ScintillaNET.Range range in ranges)
-                    range.SetIndicator(NUM);
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            //// not used: 3 7 8 9 12 13 14 15 17 18 20-31 33-39
-            //int start = 35;
-            //int val = start;
-
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Red);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Green);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Purple);
-            //var t = txtDst.Lexing.StyleNameMap;
-
-            ////for (int i = 0; i < 200; i++)
-            ////{
-            ////    txtDst.Styles[i].Reset();
-            ////}
-
-
-
-
-            //txtDst.Styles[3].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            ////txtDst.Styles[4].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[7].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[8].BackColor = Color.FromKnownColor(KnownColor.Yellow);
-            //txtDst.Styles[9].BackColor = Color.FromKnownColor(KnownColor.Purple);
-            //txtDst.Styles[12].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[13].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[14].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[15].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[17].BackColor = Color.FromKnownColor(KnownColor.Yellow);
-            //txtDst.Styles[18].BackColor = Color.FromKnownColor(KnownColor.Purple);
-            //txtDst.Styles[20].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[21].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[22].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[23].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[24].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[25].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[26].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[27].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[28].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[29].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[30].BackColor = Color.FromKnownColor(KnownColor.DarkGreen);
-            //txtDst.Styles[31].BackColor = Color.FromKnownColor(KnownColor.DarkMagenta);
-            ////txtDst.Styles[32].BackColor = Color.FromKnownColor(KnownColor.DarkSlateBlue);
-            //txtDst.Styles[33].BackColor = Color.FromKnownColor(KnownColor.ForestGreen);
-            //txtDst.Styles[34].BackColor = Color.FromKnownColor(KnownColor.Goldenrod);
-            //txtDst.Styles[35].BackColor = Color.FromKnownColor(KnownColor.Gray);
-            //txtDst.Styles[36].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[37].BackColor = Color.FromKnownColor(KnownColor.Indigo);
-            //txtDst.Styles[38].BackColor = Color.FromKnownColor(KnownColor.Maroon);
-            //txtDst.Styles[39].BackColor = Color.FromKnownColor(KnownColor.MediumBlue);
-            //txtDst.Styles[40].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[41].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[42].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[43].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[44].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[45].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[46].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[47].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[48].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[49].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[50].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[51].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[52].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[53].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[54].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[55].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[56].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[57].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[58].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[59].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[60].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[61].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[62].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[63].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[64].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[65].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[66].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[67].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[68].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[69].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[70].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[71].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[72].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[73].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[74].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[75].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[76].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[77].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[78].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[79].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[80].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[81].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[82].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[83].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[84].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[85].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[86].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[87].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[88].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[89].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[90].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[91].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[92].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[93].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[94].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[95].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[96].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[97].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[98].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[99].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[107].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[108].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[109].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[110].BackColor = Color.FromKnownColor(KnownColor.Yellow);
-            //txtDst.Styles[111].BackColor = Color.FromKnownColor(KnownColor.Purple);
-            //txtDst.Styles[112].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[113].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[114].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[115].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[117].BackColor = Color.FromKnownColor(KnownColor.Yellow);
-            //txtDst.Styles[118].BackColor = Color.FromKnownColor(KnownColor.Purple);
-            //txtDst.Styles[120].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[121].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[122].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[123].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[124].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[125].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[126].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[127].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[128].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[129].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[130].BackColor = Color.FromKnownColor(KnownColor.DarkGreen);
-            //txtDst.Styles[131].BackColor = Color.FromKnownColor(KnownColor.DarkMagenta);
-            //txtDst.Styles[132].BackColor = Color.FromKnownColor(KnownColor.DarkSlateBlue);
-            //txtDst.Styles[133].BackColor = Color.FromKnownColor(KnownColor.ForestGreen);
-            //txtDst.Styles[134].BackColor = Color.FromKnownColor(KnownColor.Goldenrod);
-            //txtDst.Styles[135].BackColor = Color.FromKnownColor(KnownColor.Gray);
-            //txtDst.Styles[136].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[137].BackColor = Color.FromKnownColor(KnownColor.Indigo);
-            //txtDst.Styles[138].BackColor = Color.FromKnownColor(KnownColor.Maroon);
-            //txtDst.Styles[139].BackColor = Color.FromKnownColor(KnownColor.MediumBlue);
-            //txtDst.Styles[140].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[141].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[142].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[143].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[144].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[145].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[146].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[147].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[148].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[149].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[150].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[151].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[152].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[153].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[154].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[155].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[156].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[157].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[158].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[159].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[160].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[161].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[162].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[163].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[164].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[165].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[166].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[167].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[168].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[169].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[170].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[171].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[172].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[173].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[174].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[175].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[176].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[177].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[178].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[179].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[180].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[181].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[182].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[183].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[184].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[185].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[186].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[187].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[188].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[189].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            //txtDst.Styles[190].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[191].BackColor = Color.FromKnownColor(KnownColor.Red);
-            //txtDst.Styles[192].BackColor = Color.FromKnownColor(KnownColor.Green);
-            //txtDst.Styles[193].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[194].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            //txtDst.Styles[195].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            //txtDst.Styles[196].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            //txtDst.Styles[197].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            //txtDst.Styles[198].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            //txtDst.Styles[199].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Blue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Brown);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.CadetBlue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Crimson);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkBlue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkCyan);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkGreen);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkMagenta);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.DarkSlateBlue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.ForestGreen);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Goldenrod);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Gray);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Green);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Indigo);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Maroon);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumBlue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumAquamarine);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumOrchid);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumPurple);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumSlateBlue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.MediumVioletRed);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Olive);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.OliveDrab);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Peru);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Purple);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Red);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.RoyalBlue);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.SaddleBrown);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.SlateGray);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Teal);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.Tomato);
-            ////txtDst.Styles[val++].BackColor = Color.FromKnownColor(KnownColor.YellowGreen);
-
-
-            ////txtDst.Lexing.StyleNameMap.Add("Reg0", 5);
-            ////txtDst.Lexing.StyleNameMap.Add("1", 6);
-            //txtDst.Lexing.StyleNameMap.Add("2", 7);
-            ////txtDst.Lexing.SetProperty("Reg0", +i.ToString());
-
-            ////txtDst.ConfigurationManager.Configure();
-            ////txtDst.Refresh();
-            //txtDst.Indicators.
-            ////int val2 = 0;
-            ////foreach (var r in regColors)
-            ////    txtDst.Lexing.SetKeywords(val2++, r.Key);
-
-            //for (int i = 0; i < 199; i++)
-            //{
-            //    txtDst.Lexing.SetKeywords(i, "f"+i.ToString());
-            //}
-
-            ////for (int i = 0; i < 200; i++)
-            ////{
-            ////    txtDst.Styles[i].Apply(100);
-            ////}
-
-
-            //txtDst.Lexing.Colorize();
+                    range.SetIndicator(colorToUse);
+            }          
         }
     }
 
@@ -1695,7 +1420,7 @@ namespace CudaPAD
         public bool regRead2IsLast;
     }
 
-    public class ListViewItemColumnSorter : System.Collections.IComparer
+    public class ListViewItemColumnSorter : IComparer
     {
         public int curColumn = 0;
         public bool int_mode = false;
@@ -1704,9 +1429,9 @@ namespace CudaPAD
             string a = ((ListViewItem)x).SubItems[curColumn].Text;
             string b = ((ListViewItem)y).SubItems[curColumn].Text;
             if (int_mode)
-                return Int32.Parse(a) - Int32.Parse(b);
+                return int.Parse(a) - int.Parse(b);
             else
-                return String.Compare(a, b);
+                return string.Compare(a, b);
         }
     }
 }

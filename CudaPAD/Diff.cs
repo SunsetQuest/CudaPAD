@@ -382,7 +382,7 @@ namespace DiffUtils
 
       int MaxD = ((UpperA - LowerA + UpperB - LowerB) / 2) + 1;
 
-      // Debug.Write(2, "SMS", String.Format("Search the box: A[{0}-{1}] to B[{2}-{3}]", LowerA, UpperA, LowerB, UpperB));
+      // Debug.Write(2, "SMS", string.Format("Search the box: A[{0}-{1}] to B[{2}-{3}]", LowerA, UpperA, LowerB, UpperB));
 
       // init vectors
       DownVector[DownOffset + DownK + 1] = LowerA;
@@ -478,7 +478,7 @@ namespace DiffUtils
     /// <param name="DownVector">a vector for the (0,0) to (x,y) search. Passed as a parameter for speed reasons.</param>
     /// <param name="UpVector">a vector for the (u,v) to (N,M) search. Passed as a parameter for speed reasons.</param>
     private static void LCS(DiffData DataA, int LowerA, int UpperA, DiffData DataB, int LowerB, int UpperB, int[] DownVector, int[] UpVector) {
-      // Debug.Write(2, "LCS", String.Format("Analyze the box: A[{0}-{1}] to B[{2}-{3}]", LowerA, UpperA, LowerB, UpperB));
+      // Debug.Write(2, "LCS", string.Format("Analyze the box: A[{0}-{1}] to B[{2}-{3}]", LowerA, UpperA, LowerB, UpperB));
 
       // Fast walk-through equal lines at the start
       while (LowerA < UpperA && LowerB < UpperB && DataA.data[LowerA] == DataB.data[LowerB]) {
@@ -503,7 +503,7 @@ namespace DiffUtils
       } else {
         // Find the middle snakea and length of an optimal path for A and B
         SMSRD smsrd = SMS(DataA, LowerA, UpperA, DataB, LowerB, UpperB, DownVector, UpVector);
-        // Debug.Write(2, "MiddleSnakeData", String.Format("{0},{1}", smsrd.x, smsrd.y));
+        // Debug.Write(2, "MiddleSnakeData", string.Format("{0},{1}", smsrd.x, smsrd.y));
 
         // The path is from LowerX to (x,y) and (x,y) to UpperX
         LCS(DataA, LowerA, smsrd.x, DataB, LowerB, smsrd.y, DownVector, UpVector);
