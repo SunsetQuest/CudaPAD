@@ -187,7 +187,7 @@ namespace CudaPAD
                 + @"\r\n[\t ]*\r\n[\t ]*(?=\r\n)|"      // remove two blank lines in a row (added 1/24/2016)
                 + @"__cudaparm_\w+(?=_\w+)|"            // shorten __cudaparam_
                 + @"(?<=\$)Lt_\d+(?'tag'_\d+:?)(\r\n)?|"// shorten labels $Lt_0_22 --> $_22
-                + @"\t// inline asm\r\n|"               // remove "// inline asm" lines (added 1/24/2016)
+                + @"\t// inline asm\r\n|"               // remove "// inline asm" comments (added 1/24/2016)
                 + @"\t.loc[ \t]\d+[ \t].*\r\n"          // remove .loc 15 lines  (note: use spaces for sm_20 and higher)                
                 , RegexOptions.Multiline | RegexOptions.Compiled);
 
@@ -525,8 +525,10 @@ namespace CudaPAD
                 int horizontalScrollOffset = txtDst.Scrolling.HorizontalScrollOffset;
                 int cursorLoc = txtDst.CurrentPos;
 
+                // If PTX is selected in the combobox then do the following...
                 if (cboOutType.Text == "PTX")
                 {
+                    // First read in the PTX file output file from nvcc.exe
                     string ptxOutput = "";
                     try
                     {
@@ -544,9 +546,10 @@ namespace CudaPAD
                         MessageBox.Show("Error loading " + TEMP_PATH + @"\data.ptx." +  er.Message);
                     }
 
+                    // Remove and of the easy guide lines because we will need to re-draw them.
                     linesInfo.Clear();
 
-                    // Lets divide the PTX in two part: Header and Bondy
+                    // Lets split the PTX in two parts: Header and Body
                     int locOfStartOfBody;
                     if (sm10ToolStripMenuItem.Checked ||
                         sm11ToolStripMenuItem.Checked ||
@@ -560,7 +563,6 @@ namespace CudaPAD
                         locOfStartOfBody = Regex.Match(ptxOutput, @"\.visible \.entry .+\)\r\n\{",
                             RegexOptions.Singleline | RegexOptions.Compiled).Index;
                     }
-
                     string header = ptxOutput.Substring(0, locOfStartOfBody);
                     string ptx_body = ptxOutput.Substring(locOfStartOfBody);
 
@@ -568,42 +570,46 @@ namespace CudaPAD
                     if (string.IsNullOrEmpty(header)) //b/c of side effects the header would be in the body if this happens - so the header would be empty.
                     {
                         header = ptx_body;
-                        ptx_body = ""; // "(no output to show)";
+                        ptx_body = "";
                     }
 
-                    // Extract the fileNumberOfCudaFileInPTX
+                    // Extract the fileNumberOfCudaFileInPTX. We get this information from the ".file" line.
                     string fileNumberOfCudaFileInPTX = Regex.Match(ptxOutput, @".*\t\.file\t(?<num>\d+)\s.+\\data.cu"".*", 
                         RegexOptions.Singleline | RegexOptions.Compiled).Groups["num"].Value;
                     if (string.IsNullOrEmpty(fileNumberOfCudaFileInPTX))
                         fileNumberOfCudaFileInPTX = "xi045nn"; //something that will never be found
 
-                    // Fill in  "//Line: __ comments"
+                    // move the ".loc" source code line to the next line in the format "...// Line: __ ".
                     string regex_line = @"\t.loc\s" + fileNumberOfCudaFileInPTX + @"\s(?'line'\d+)\s\d+\r\n(?'nextline'.+)\r\n";
                     ptx_body = Regex.Replace(ptx_body, regex_line, "${nextline}	// Line: ${line}\r\n", 
                         RegexOptions.Multiline | RegexOptions.Compiled);
 
-                    // Prevent Empty Output
+                    // Sometimes when there is an error the ptx_body will be empty. To prevent errors
+                    // in cudapad a ".entry _f {$f: exit}" is filled in the body. (an empty kernel)
                     if (string.IsNullOrEmpty(ptx_body)) ptx_body = ".entry _f {$f: exit}";
 
-                    // Cleanup PTX output
+                    // Let cleanup the PTX text by removing unneeded comments, unneeded ids, empty "//"
+                    // return key after label, remove "%", remove two blank lines in a row, shorten
+                    // __cudaparam_, shorten labels, remove "// inline asm" comments, remove .loc 15 lines.
+                    // Note: see the implementation of cleanupRegEx above to see what it removes.
                     ptx_body = cleanupRegEx.Replace(ptx_body, "${tag}");
-                    
-                    // Lets remove line number and register numbers and then do a compare (updated 1/24/2016)
+
+                    // Lets remove the line numbers and register numbers and then do a 'diff' compare. (updated 1/24/2016)
                     string toCompare = Regex.Replace(ptx_body, @"(?<=[rfp][hl]?)\d+|(?<=// Line: )\d+|(?<=\$_)\d+", "__",RegexOptions.Compiled);
                     ptx_body = DiffCalc(toCompare, ptx_body);
 
-                    // Lets split up the PTX output into lines so we can work on one line at a time
-                    string[] dstLines = Regex.Split(ptx_body, "\n",RegexOptions.Compiled);
-
-                    for (int i = 0; i < dstLines.Count(); i++)
+                    // Now lets gather some information on the ptx_body like SourceLineNumber, ptxLineNumber, ect. 
+                    // Lets do this one line at a time. 
+                    string[] ptxLines = Regex.Split(ptx_body, "\n",RegexOptions.Compiled);
+                    for (int ptxLineNumber = 0; ptxLineNumber < ptxLines.Count(); ptxLineNumber++)
                     {
-                        string line = dstLines[i];
+                        string line = ptxLines[ptxLineNumber];
 
                         string srcLineNo = Regex.Replace(line, @".*// Line: (?'tag'\d+)|.*", "${tag}", RegexOptions.Compiled);
 
                         linesInfo.Add(new LineInfo() 
                         { 
-                            lineNo = i + 1, 
+                            lineNo = ptxLineNumber + 1, 
                             srcLineNo = (string.IsNullOrEmpty(srcLineNo)) ? -1 : int.Parse(srcLineNo), 
                             regRead1 = "", 
                             regRead1IsLast = false, 
@@ -614,11 +620,14 @@ namespace CudaPAD
                         });
                     }
 
-                    //Remove empty "// " AND "//Line: 00" AND "Line: __"
-                    string newDest = Regex.Replace(ptx_body, @"\s*//( Line:( \d+| __)|\s*(?=(\r\n)|//))", "",RegexOptions.Multiline);;
-                    txtDst.Invoke((MethodInvoker)delegate { txtDst.Text = newDest; });
-                    ReDrawLines();
+                    // More Cleanup, lets remove empty "// " AND "//Line: 00" AND "Line: __"
+                    ptx_body = Regex.Replace(ptx_body, @"\s*//( Line:( \d+| __)|\s*(?=(\r\n)|//))", "",RegexOptions.Multiline);;
 
+                    // We are done, lets write the new ptx_body to the right side window
+                    txtDst.Invoke((MethodInvoker)delegate { txtDst.Text = ptx_body; });
+
+                    // Lets also draw the guide lines
+                    ReDrawLines();
                 }
                 else if (cboOutType.Text == "SASS")
                 {

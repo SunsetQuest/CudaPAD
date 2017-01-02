@@ -1,5 +1,5 @@
-﻿// Originally by Eugene Myers
-// Converted in to C# by Matthias Hertel (2002 to 2009)
+﻿// Originally by Eugene Myers (2002)
+// Converted to C# by Matthias Hertel (2008) (see authors notes below)
 // Source: http://www.mathertel.de/Diff/ViewSrc.aspx
 
 namespace DiffUtils
@@ -45,8 +45,8 @@ namespace DiffUtils
   /// so they can be members of the class to avoid the parameter overhead.
   /// In SMS is a lot of boundary arithmetic in the for-D and for-k loops that can be done by increment
   /// and decrement of local variables.
-  /// The DownVector and UpVector arrays are alywas created and destroyed each time the SMS gets called.
-  /// It is possible to reuse tehm when transferring them to members of the class.
+  /// The DownVector and UpVector arrays are always created and destroyed each time the SMS gets called.
+  /// It is possible to reuse them when transferring them to members of the class.
   /// See TODO: hints.
   /// 
   /// diff.cs: A port of the algorithm to C#
