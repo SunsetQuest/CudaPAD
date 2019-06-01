@@ -11,7 +11,7 @@ using System.Resources;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("CudaPad")]
 [assembly: AssemblyProduct("CudaPad")]
-[assembly: AssemblyCopyright("2009, 2013, 2014, 2015, 2016")]
+[assembly: AssemblyCopyright("2009, 2013, 2014, 2015, 2016, 2017, 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -12,9 +12,9 @@ using System.Text.RegularExpressions;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.Win32;
 using DiffUtils;
 using System.Collections;
+
 
 namespace CudaPAD
 {
@@ -57,8 +57,8 @@ namespace CudaPAD
         /// <summary>Hides the left view. When disabled autoPTX and any lines should be disabled .</summary>
         bool ptxPaneEnabled = true;
 
-        /// <summary>The location of visual studio.</summary>
-        string vsStudioPath = "";
+        /// <summary>The location of visual studio command configuration file.(vcvarsall.bat)</summary>
+        string VisualStudioVCVarsAllPath = "";
 
         /// <summary>The path to the temp directory for CudaPAD.</summary>
         readonly string TEMP_PATH;
@@ -83,49 +83,26 @@ namespace CudaPAD
 
         public MainForm()
         {
-            // Find the location of visual studio (%VS90COMNTOOLS%\..\..\vc\vcvarsall.bat)
-            // source: http://stackoverflow.com/questions/30504/programmatically-retrieve-visual-studio-install-directory (Kevin Kibler 2014)
-            string visualStudioRegistryKeyPath = @"SOFTWARE\Microsoft\VisualStudio";
-            string visualCSharpExpressRegistryKeyPath = @"SOFTWARE\Microsoft\VCSExpress";
-            List<Version> vsVersions = new List<Version>() { new Version("12.0"), new Version("11.0"), 
-                new Version("14.0"), new Version("10.0"), new Version("15.0") };
-            foreach (var version in vsVersions)
-            {
-                foreach (var isExpress in new bool[] { false, true })
-                {
-                    RegistryKey registryBase32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                    RegistryKey vsVersionRegistryKey = registryBase32.OpenSubKey(
-                        string.Format(@"{0}\{1}.{2}", (isExpress) ? visualCSharpExpressRegistryKeyPath : visualStudioRegistryKeyPath, version.Major, version.Minor));
-                    if (vsVersionRegistryKey == null) { continue; }
-                    string path = vsVersionRegistryKey.GetValue("InstallDir", string.Empty).ToString();
-                    if (!string.IsNullOrEmpty(path))
-                    {
-                        path = Directory.GetParent(path).Parent.Parent.FullName;
-                        if (File.Exists(path + @"\VC\bin\cl.exe") && File.Exists(path + @"\VC\vcvarsall.bat"))
-                        {
-                            vsStudioPath = path;
-                            break;
-                        }
-                    }
-                }
-                if (!string.IsNullOrEmpty(vsStudioPath)) 
-                    break;
-            }
-            
-            if (string.IsNullOrEmpty(vsStudioPath))
-                if (MessageBox.Show(this, "The cl.exe and//or vcvarsall.bat cannot be found in the Visual " 
+            var vsPath = VS_Tools.GetVSPath(avoidPrereleases:true, requiredWorkload: "NativeDesktop");
+
+            if (File.Exists(vsPath + @"\VC\bin\cl.exe") && File.Exists(vsPath + @"\VC\vcvarsall.bat")) //VS 2010,2013,2015
+                VisualStudioVCVarsAllPath = vsPath + @"\VC\vcvarsall.bat";
+            else if (File.Exists(vsPath + @"\VC\Auxiliary\Build\vcvars64.bat")) //VS 2017,2019
+                VisualStudioVCVarsAllPath = vsPath + @"\VC\Auxiliary\Build\vcvars64.bat";
+            else if (MessageBox.Show(this, "The cl.exe and//or vcvarsall.bat cannot be found in the Visual "
                     + "Studio directory. Please download Visual Studio from Microsoft's website. \nDo still "
                     + "wish to continue although CudaPAD may not run correctly?",
                     "Missing Cuda Compiler", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
-                    Application.Exit();
-
+            {
+                Application.Exit();
+            }
 
             /////////// SETUP TEMP\cupad09 FOLDER ///////////
             // Set All the Paths for CLEXE_PATH, and TEMP_PATH
             string system_temp_folder = System.Environment.GetEnvironmentVariable("TEMP");
             if (system_temp_folder == null)
-                throw new ApplicationException("Environment Variable 'TEMP' does not exists.");
+                throw new SystemException("Environment Variable 'TEMP' does not exists.");
 
             // Make sure the folder cupad09 folder exists
             TEMP_PATH = system_temp_folder + @"\cupad09\";
@@ -307,7 +284,6 @@ namespace CudaPAD
             if (deviceDebugToolStripMenuItem.Enabled)
                 if (deviceDebugToolStripMenuItem.Checked)
                     options.Append("--device-debug ");
-            options.Append(bit64ToolStripMenuItem.Checked ? "-m 64 " : "-m 32 ");
             if (fTZFloatToZeroToolStripMenuItem.Enabled)
                 options.Append("--ftz " + (fTZFloatToZeroToolStripMenuItem.Checked ? "true " : "false "));
             if (precDIVToolStripMenuItem.Enabled)
@@ -332,13 +308,13 @@ namespace CudaPAD
             sw.WriteLine("REM  - run on each change in the source code.");
             sw.WriteLine("REM  - over-written whenever any settings are modified in CudaPAD.");
             sw.WriteLine("");
-            sw.WriteLine(@"call """ + vsStudioPath + @"\vc\vcvarsall.bat""");
+            sw.WriteLine(@"call """ + VisualStudioVCVarsAllPath + @"""");
             sw.WriteLine("del data.cubin");
             sw.WriteLine(@"set path=%CUDA_PATH%\bin;%path%");
             sw.WriteLine(@"nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" " 
                 + options + " data.cu  2>rtcof.dat >info.txt "); //-Xptxas=""-v"" shows reg usage
-            sw.WriteLine(@"echo Command: nvcc.exe  -keep -cubin --generate-line-info -Xptxas=""-v"" "
-                + options + " data.cu  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
+            sw.WriteLine(@"echo nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" "
+                + options + "data.cu  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
             sw.WriteLine("ren data.*.cubin data.cubin");
             if (cboOutType.Text == "SASS")
                 sw.WriteLine("cuobjdump -sass data.cubin > SASS.txt");
@@ -402,15 +378,15 @@ namespace CudaPAD
         }
                 
         /// <summary>Parses out the each error from cuda.out and writes it to the error list. It also filters out duplicates.</summary>
-        public void AddItemToListLog(Match m)
+        public void AddItemToListLog(Match errorMatch)
         {
             string[] s = new string[3];
             s[0] = "";
-            s[1] = m.Groups["line"].Value;
-            s[2] = m.Groups["msg"].Value;
+            s[1] = errorMatch.Groups["line"].Value;
+            s[2] = errorMatch.Groups["msg"].Value;
             
             ListViewItem listViewItem1 = new ListViewItem(s);
-            if (m.Groups["error"].Value == "error")
+            if (errorMatch.Groups["error"].Value == "error")
                 listViewItem1.ImageIndex = 1;
             else
                 listViewItem1.ImageIndex = 0;
@@ -585,7 +561,7 @@ namespace CudaPAD
                         RegexOptions.Multiline | RegexOptions.Compiled);
 
                     // Sometimes when there is an error the ptx_body will be empty. To prevent errors
-                    // in cudapad a ".entry _f {$f: exit}" is filled in the body. (an empty kernel)
+                    // in CudaPad a ".entry _f {$f: exit}" is filled in the body. (an empty kernel)
                     if (string.IsNullOrEmpty(ptx_body)) ptx_body = ".entry _f {$f: exit}";
 
                     // Let cleanup the PTX text by removing unneeded comments, unneeded ids, empty "//"
@@ -643,9 +619,7 @@ namespace CudaPAD
                     {
                         SASS_body = "";
                     }
-                    const string regex =
-                        @"\n\tcode for sm_\d+|"
-                       + @"\.{10,}";
+                    const string regex = @"(?<header1>\n\tcode for sm_\d+)|(?<header2>\s+Function\s+:\s+\w+)|(?<header3>\s+\.headerflags\s+.+)|(?<SpaceBeforeLineNum>(?<=\n)\s{8})|(?<SpaceAfterLineNum>(?<=\/)\ {10})|(?<CombineEmptyLines>(?<=[0-9a-hA-H])\s\*\/\s{15,}\/\*(?=\s[0-9a-hA-H]))";
                     SASS_body = Regex.Replace(SASS_body, regex, "", RegexOptions.Compiled);
                    
                     // separate multiple columns into a single column
@@ -740,12 +714,14 @@ namespace CudaPAD
                 case "SASS":
                     toolStripBtnLines.Enabled = false;
                     txtDst.LineWrapping.Mode = ScintillaNET.LineWrappingMode.None;
+                    txtDst.ConfigurationManager.Language = "sass";
                     ConfigureRegExCleaner(!LinesEnabled);
                     break;
 
                 case "PTX":
                     toolStripBtnLines.Enabled = true;
                     txtDst.LineWrapping.Mode = ScintillaNET.LineWrappingMode.None;
+                    txtDst.ConfigurationManager.Language = "ptx";
                     ConfigureRegExCleaner(true);
                     break;
             }
@@ -1043,7 +1019,7 @@ namespace CudaPAD
             precSqrtprecsqrtToolStripMenuItem.Enabled = !useFastMath;
             fusedMultAddfmadToolStripMenuItem.Enabled = !useFastMath;
 
-            // The below sets adds checks in front of the disabled checkboxs.
+            // The below sets adds checks in front of the disabled checkboxes.
             //if (useFastMath)
             //{
             //    fTZFloatToZeroToolStripMenuItem.Checked = true;
@@ -1287,12 +1263,9 @@ namespace CudaPAD
                 case "useFastMathToolStripMenuItem":
                     useFastMathToolStripMenuItem.Checked = !useFastMathToolStripMenuItem.Checked;
                     break;
-                case "bit64ToolStripMenuItem":
-                    bit64ToolStripMenuItem.Checked = !bit64ToolStripMenuItem.Checked;
-                    break;
 
                 default:
-                    throw new ApplicationException("Error applying selected option.");
+                    throw new MissingMethodException("Error applying selected option.");
             }
 
             BuildNvccBatchFile();

@@ -19,7 +19,7 @@ namespace CudaPAD
 
         #region Assembly Attribute Accessors
 
-        public string AssemblyTitle
+        public static string AssemblyTitle
         {
             get
             {
@@ -36,7 +36,7 @@ namespace CudaPAD
             }
         }
 
-        public string AssemblyVersion
+        public static string AssemblyVersion
         {
             get
             {
@@ -44,7 +44,7 @@ namespace CudaPAD
             }
         }
 
-        public string AssemblyDescription
+        public static string AssemblyDescription
         {
             get
             {
@@ -57,7 +57,7 @@ namespace CudaPAD
             }
         }
 
-        public string AssemblyProduct
+        public static string AssemblyProduct
         {
             get
             {
@@ -70,7 +70,7 @@ namespace CudaPAD
             }
         }
 
-        public string AssemblyCopyright
+        public static string AssemblyCopyright
         {
             get
             {
@@ -83,7 +83,7 @@ namespace CudaPAD
             }
         }
 
-        public string AssemblyCompany
+        public static string AssemblyCompany
         {
             get
             {

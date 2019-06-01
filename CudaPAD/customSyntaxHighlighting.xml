@@ -1,11 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ScintillaNET>
-<Language Name="default">
-<Styles>
-<Style Name="Default" FontName="Consolas"/>
-</Styles>
-</Language>
-
 <Language Name="cu">
 <AutoComplete FillUpCharacters=".([" SingleLineAccept="True" IsCaseSensitive="False">
 <List>
@@ -296,5 +290,108 @@
       </Snippet>
     </Snippets>
 
+</Language>
+
+<Language Name="ptx">
+<AutoComplete FillUpCharacters=".([" SingleLineAccept="True" IsCaseSensitive="False">
+<List>
+       aaa aad aam aas adc add and call cbw
+       set setp selp slct 
+       and or xor not cnot shl shr 
+       mov ld st cvt 
+       bra call ret exit 
+       bar atom red vote 
+       bar atom red vote 
+       rcp sqrt rsqrt sin cos lg2 ex2 
+       trap brkpt 
+       sync param wide shared global 
+       exit
+       add addc sub mul mad mul24 sad div rem abs neg min max 
+       %tid %ntid %ctaid %nctaid %gridid %clock
+       .pred .s8 .s16 .s32 .s64 .u8 .u16 u32 .u64 .f16 .f32 .f64 .b8 .b16 .b32 .b64
+       .eq .ne .lt .le .gt .ge .lo .ls .hi .hs .equ .neu .ltu .leu .gtu .geu .num .nan 
+</List>
+</AutoComplete>
+<Lexer LexerName="cpp" LineCommentPrefix="/*" StreamCommentPrefix="/* " StreamCommentSuffix=" */" >
+<Keywords List="0" Inherit="False">
+       pred s8 s16 s32 s64 u8 u16 u32 u64 f16 f32 f64 b8 b16 b32 b64
+       eq ne lt le gt ge lo ls hi hs equ neu ltu leu gtu geu num nan 
+</Keywords>
+<Keywords List="1" Inherit="False">
+       aaa aad aam aas adc add and call cbw
+       set setp selp slct 
+       and or xor not cnot shl shr 
+       mov ld st cvt 
+       bra call ret exit 
+       bar atom red vote 
+       bar atom red vote 
+       rcp sqrt rsqrt sin cos lg2 ex2 
+       trap brkpt 
+       sync param wide shared global 
+       add addc sub mul mad mul24 sad div rem abs neg min max 
+	   cvta
+</Keywords>
+<Keywords List="2" Inherit="False">
+</Keywords>
+<Keywords List="3" Inherit="False">
+  entry exit reg visible tid ntid ctaid nctaid gridid clock
+</Keywords>
+</Lexer>
+</Language>
+
+<Language Name="sass">
+<AutoComplete FillUpCharacters=".([" SingleLineAccept="True" IsCaseSensitive="False">
+<List>
+  ATOM ATOMS
+  B2R BAR BFE BFI BPT BRA BRK BRX
+  CAL CCTL CCTLL CCTLT CONT CS2R CSET CSETP
+  DADD DFMA DMNMX DMUL DSET DSETP
+  EXIT
+  F2F F2I FADD FCHK FCMP FFMA FLO FMNMX FMUL FSET FSETP FSWZ FSWZADD
+  HADD2 HFMA2 HMUL2 HSET2 HSETP2
+  I2F I2I IADD IADD3 ICMP IMAD IMADSP IMNMX IMUL ISAD ISCADD ISET ISETP
+  JCAL JMP JMX
+  LD LDC LDG LDL LDS LDSLK LEA LOP LOP3
+  MEMBAR MOV MOV32I MUFU
+  NOP
+  P2R PBK PCNT PEXIT POPC PRET PRMT PSET PSETP
+  R2B R2P RED RET RRO
+  S2R SEL SHF SHFL SHL SHR SSY ST STG STL STS STSCUL SUATOM SUBFM SUCLAMP SUEAU SULD SULDGA SURED SUST SUSTGA SYNC
+  TEX TEXS TLD TLD4 TLD4S TLDS TXQ
+  VOTE
+  XMAD
+</List>
+</AutoComplete>
+<Lexer LexerName="cpp" LineCommentPrefix="/*" StreamCommentPrefix="/* " StreamCommentSuffix=" */" >
+<Keywords List="0" Inherit="False">
+  U32 U64 X GT AND NE GEU HI E
+</Keywords>
+<Keywords List="1" Inherit="False">
+  ATOM ATOMS
+  B2R BAR BFE BFI BPT BRA BRK BRX
+  CAL CCTL CCTLL CCTLT CONT CS2R CSET CSETP
+  DADD DFMA DMNMX DMUL DSET DSETP
+  EXIT
+  F2F F2I FADD FCHK FCMP FFMA FLO FMNMX FMUL FSET FSETP FSWZ FSWZADD
+  HADD2 HFMA2 HMUL2 HSET2 HSETP2
+  I2F I2I IADD IADD3 ICMP IMAD IMADSP IMNMX IMUL ISAD ISCADD ISET ISETP
+  JCAL JMP JMX
+  LD LDC LDG LDL LDS LDSLK LEA LOP LOP3
+  MEMBAR MOV MOV32I MUFU
+  NOP
+  P2R PBK PCNT PEXIT POPC PRET PRMT PSET PSETP
+  R2B R2P RED RET RRO
+  S2R SEL SHF SHFL SHL SHR SSY ST STG STL STS STSCUL SUATOM SUBFM SUCLAMP SUEAU SULD SULDGA SURED SUST SUSTGA SYNC
+  TEX TEXS TLD TLD4 TLD4S TLDS TXQ
+  VOTE
+  XMAD
+</Keywords>
+<Keywords List="2" Inherit="False">
+</Keywords>
+<Keywords List="3" Inherit="False">
+  P0 P1 P2 P3 P4 P5 P6 P7 P8 P9
+  @P0 @P1 @P2 @P3 @P4 @P5 @P6 @P7 @P8 @P9
+</Keywords>
+</Lexer>
 </Language>
 </ScintillaNET>
