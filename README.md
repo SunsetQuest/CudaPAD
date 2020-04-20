@@ -1,5 +1,5 @@
 # Changes: PTX file support
-Now you can load kernels files written in PTX assembly language and view SASS disassembly on-the-fly for debugging, learning or testing different compiler settings. These files are to be used in PTX or CUBIN format with the CUDA Driver API.
+Now you can load kernel files written in PTX assembly language and view SASS disassembly on-the-fly for debugging, learning or testing different compiler settings. These files are to be used in PTX or CUBIN format with the CUDA Driver API.
 
 # CudaPAD
 ## CudaPAD is a PTX/SASS viewer for NVIDIA Cuda kernels and provides an on-the-fly view of the assembly.
