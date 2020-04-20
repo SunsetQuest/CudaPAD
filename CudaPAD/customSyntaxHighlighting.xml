@@ -303,7 +303,7 @@
        bar atom red vote 
        bar atom red vote 
        rcp sqrt rsqrt sin cos lg2 ex2 
-       trap brkpt 
+       trap brkpt nanosleep
        sync param wide shared global 
        exit
        add addc sub mul mad mul24 sad div rem abs neg min max 
@@ -326,7 +326,7 @@
        bar atom red vote 
        bar atom red vote 
        rcp sqrt rsqrt sin cos lg2 ex2 
-       trap brkpt 
+       trap brkpt nanosleep
        sync param wide shared global 
        add addc sub mul mad mul24 sad div rem abs neg min max 
 	   cvta
@@ -360,6 +360,7 @@
   TEX TEXS TLD TLD4 TLD4S TLDS TXQ
   VOTE
   XMAD
+  WARP
 </List>
 </AutoComplete>
 <Lexer LexerName="cpp" LineCommentPrefix="/*" StreamCommentPrefix="/* " StreamCommentSuffix=" */" >
@@ -385,6 +386,7 @@
   TEX TEXS TLD TLD4 TLD4S TLDS TXQ
   VOTE
   XMAD
+  WARP
 </Keywords>
 <Keywords List="2" Inherit="False">
 </Keywords>
