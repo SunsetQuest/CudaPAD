@@ -251,7 +251,7 @@
             this.ToolStripMenuItemOpenTEMPPath,
             this.openNvccexeBatchScriptToolStripMenuItem});
             toolsToolStripMenuItem1.Name = "toolsToolStripMenuItem1";
-            toolsToolStripMenuItem1.Size = new System.Drawing.Size(47, 20);
+            toolsToolStripMenuItem1.Size = new System.Drawing.Size(46, 20);
             toolsToolStripMenuItem1.Text = "&Tools";
             // 
             // ToolStripMenuItemOpenTEMPPath
@@ -380,21 +380,21 @@
             // sm10ToolStripMenuItem
             // 
             this.sm10ToolStripMenuItem.Name = "sm10ToolStripMenuItem";
-            this.sm10ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm10ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm10ToolStripMenuItem.Tag = "-arch sm_10";
             this.sm10ToolStripMenuItem.Text = "sm_10";
             // 
             // sm11ToolStripMenuItem
             // 
             this.sm11ToolStripMenuItem.Name = "sm11ToolStripMenuItem";
-            this.sm11ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm11ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm11ToolStripMenuItem.Tag = "-arch sm_11";
             this.sm11ToolStripMenuItem.Text = "sm_11";
             // 
             // sm13ToolStripMenuItem
             // 
             this.sm13ToolStripMenuItem.Name = "sm13ToolStripMenuItem";
-            this.sm13ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm13ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm13ToolStripMenuItem.Tag = "-arch sm_13";
             this.sm13ToolStripMenuItem.Text = "sm_13";
             // 
@@ -403,7 +403,7 @@
             this.letCompilerChooseToolStripMenuItem.Checked = true;
             this.letCompilerChooseToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.letCompilerChooseToolStripMenuItem.Name = "letCompilerChooseToolStripMenuItem";
-            this.letCompilerChooseToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.letCompilerChooseToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.letCompilerChooseToolStripMenuItem.Tag = " ";
             this.letCompilerChooseToolStripMenuItem.Text = "Default";
             // 
@@ -498,124 +498,123 @@
             this.architectureToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.architectureToolStripMenuItem.Text = "&Architecture";
             this.architectureToolStripMenuItem.ToolTipText = resources.GetString("architectureToolStripMenuItem.ToolTipText");
-            this.architectureToolStripMenuItem.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.toolStripMenuItem_DropDownItemClicked);
             // 
             // sm20ToolStripMenuItem
             // 
             this.sm20ToolStripMenuItem.Name = "sm20ToolStripMenuItem";
-            this.sm20ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm20ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm20ToolStripMenuItem.Tag = "-arch sm_20";
             this.sm20ToolStripMenuItem.Text = "sm_20";
             // 
             // sm21ToolStripMenuItem
             // 
             this.sm21ToolStripMenuItem.Name = "sm21ToolStripMenuItem";
-            this.sm21ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm21ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm21ToolStripMenuItem.Tag = "-arch sm_21";
             this.sm21ToolStripMenuItem.Text = "sm_21";
             // 
             // sm22ToolStripMenuItem
             // 
             this.sm22ToolStripMenuItem.Name = "sm22ToolStripMenuItem";
-            this.sm22ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm22ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm22ToolStripMenuItem.Tag = "-arch sm_22";
             this.sm22ToolStripMenuItem.Text = "sm_22";
             // 
             // sm23ToolStripMenuItem
             // 
             this.sm23ToolStripMenuItem.Name = "sm23ToolStripMenuItem";
-            this.sm23ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm23ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm23ToolStripMenuItem.Tag = "-arch sm_23";
             this.sm23ToolStripMenuItem.Text = "sm_23";
             // 
             // sm30ToolStripMenuItem
             // 
             this.sm30ToolStripMenuItem.Name = "sm30ToolStripMenuItem";
-            this.sm30ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm30ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm30ToolStripMenuItem.Tag = "-arch sm_30";
             this.sm30ToolStripMenuItem.Text = "sm_30";
             // 
             // sm32ToolStripMenuItem
             // 
             this.sm32ToolStripMenuItem.Name = "sm32ToolStripMenuItem";
-            this.sm32ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm32ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm32ToolStripMenuItem.Tag = "-arch sm_32";
             this.sm32ToolStripMenuItem.Text = "sm_32";
             // 
             // sm35ToolStripMenuItem
             // 
             this.sm35ToolStripMenuItem.Name = "sm35ToolStripMenuItem";
-            this.sm35ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm35ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm35ToolStripMenuItem.Tag = "-arch sm_35";
             this.sm35ToolStripMenuItem.Text = "sm_35";
             // 
             // sm37ToolStripMenuItem
             // 
             this.sm37ToolStripMenuItem.Name = "sm37ToolStripMenuItem";
-            this.sm37ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm37ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm37ToolStripMenuItem.Tag = "-arch sm_37";
             this.sm37ToolStripMenuItem.Text = "sm_37";
             // 
             // sm50ToolStripMenuItem
             // 
             this.sm50ToolStripMenuItem.Name = "sm50ToolStripMenuItem";
-            this.sm50ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm50ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm50ToolStripMenuItem.Tag = "-arch sm_50";
             this.sm50ToolStripMenuItem.Text = "sm_50";
             // 
             // sm52ToolStripMenuItem
             // 
             this.sm52ToolStripMenuItem.Name = "sm52ToolStripMenuItem";
-            this.sm52ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm52ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm52ToolStripMenuItem.Tag = "-arch sm_52";
             this.sm52ToolStripMenuItem.Text = "sm_52";
             // 
             // sm53ToolStripMenuItem
             // 
             this.sm53ToolStripMenuItem.Name = "sm53ToolStripMenuItem";
-            this.sm53ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm53ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm53ToolStripMenuItem.Tag = "-arch sm_53";
             this.sm53ToolStripMenuItem.Text = "sm_53";
             // 
             // sm60ToolStripMenuItem
             // 
             this.sm60ToolStripMenuItem.Name = "sm60ToolStripMenuItem";
-            this.sm60ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm60ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm60ToolStripMenuItem.Tag = "-arch sm_60";
             this.sm60ToolStripMenuItem.Text = "sm_60";
             // 
             // sm61ToolStripMenuItem
             // 
             this.sm61ToolStripMenuItem.Name = "sm61ToolStripMenuItem";
-            this.sm61ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm61ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm61ToolStripMenuItem.Tag = "-arch sm_61";
             this.sm61ToolStripMenuItem.Text = "sm_61";
             // 
             // sm62ToolStripMenuItem
             // 
             this.sm62ToolStripMenuItem.Name = "sm62ToolStripMenuItem";
-            this.sm62ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm62ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm62ToolStripMenuItem.Tag = "-arch sm_62";
             this.sm62ToolStripMenuItem.Text = "sm_62";
             // 
             // sm70ToolStripMenuItem
             // 
             this.sm70ToolStripMenuItem.Name = "sm70ToolStripMenuItem";
-            this.sm70ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm70ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm70ToolStripMenuItem.Tag = "-arch sm_70";
             this.sm70ToolStripMenuItem.Text = "sm_70";
             // 
             // sm72ToolStripMenuItem
             // 
             this.sm72ToolStripMenuItem.Name = "sm72ToolStripMenuItem";
-            this.sm72ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm72ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm72ToolStripMenuItem.Tag = "-arch sm_72";
             this.sm72ToolStripMenuItem.Text = "sm_72";
             // 
             // sm75ToolStripMenuItem
             // 
             this.sm75ToolStripMenuItem.Name = "sm75ToolStripMenuItem";
-            this.sm75ToolStripMenuItem.Size = new System.Drawing.Size(112, 22);
+            this.sm75ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.sm75ToolStripMenuItem.Tag = "-arch sm_75";
             this.sm75ToolStripMenuItem.Text = "sm_75";
             // 
@@ -767,19 +766,19 @@
             this.ToolStripMenuItemLogList_copy,
             this.ToolStripMenuItemLogList_google});
             this.contextMenuStripForListLog.Name = "contextMenuStripForListLog";
-            this.contextMenuStripForListLog.Size = new System.Drawing.Size(138, 48);
+            this.contextMenuStripForListLog.Size = new System.Drawing.Size(137, 48);
             // 
             // ToolStripMenuItemLogList_copy
             // 
             this.ToolStripMenuItemLogList_copy.Name = "ToolStripMenuItemLogList_copy";
-            this.ToolStripMenuItemLogList_copy.Size = new System.Drawing.Size(137, 22);
+            this.ToolStripMenuItemLogList_copy.Size = new System.Drawing.Size(136, 22);
             this.ToolStripMenuItemLogList_copy.Text = "Copy";
             this.ToolStripMenuItemLogList_copy.Click += new System.EventHandler(this.ToolStripMenuItemLogList_copy_Click);
             // 
             // ToolStripMenuItemLogList_google
             // 
             this.ToolStripMenuItemLogList_google.Name = "ToolStripMenuItemLogList_google";
-            this.ToolStripMenuItemLogList_google.Size = new System.Drawing.Size(137, 22);
+            this.ToolStripMenuItemLogList_google.Size = new System.Drawing.Size(136, 22);
             this.ToolStripMenuItemLogList_google.Text = "Google This";
             this.ToolStripMenuItemLogList_google.Click += new System.EventHandler(this.ToolStripMenuItemLogList_google_Click);
             // 
@@ -1093,7 +1092,7 @@
             // 
             this.toolStripStatusLabel1.AutoToolTip = true;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(85, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(84, 17);
             this.toolStripStatusLabel1.Text = "Compile Time:";
             this.toolStripStatusLabel1.ToolTipText = "The time it took for the last compile.";
             // 
@@ -1118,14 +1117,14 @@
             // 
             this.saveFileDialog1.DefaultExt = "cu";
             this.saveFileDialog1.FileName = "MyCudaFile.cu";
-            this.saveFileDialog1.Filter = "NVidia Cuda File(.cu)|*.cu|All Files|*.*";
-            this.saveFileDialog1.Title = "Save Cuda File";
+            this.saveFileDialog1.Filter = "NVidia Cuda File(*.ptx, *.cu)|*.cu;*.ptx|All Files|*.*";
+            this.saveFileDialog1.Title = "Save File";
             // 
             // openFileDialog1
             // 
             this.openFileDialog1.DefaultExt = "cu";
-            this.openFileDialog1.Filter = "NVidia Cuda File(.cu)|*.cu|All Files|*.*";
-            this.openFileDialog1.Title = "Open Cuda File";
+            this.openFileDialog1.Filter = "NVidia Cuda File(*.ptx, *.cu)|*.cu;*.ptx|All Files|*.*";
+            this.openFileDialog1.Title = "Open File";
             // 
             // MainForm
             // 

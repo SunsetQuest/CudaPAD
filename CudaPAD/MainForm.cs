@@ -20,6 +20,12 @@ namespace CudaPAD
 {
     public partial class MainForm : Form
     {
+        /// <summary>File type of source, CUDA or PTX</summary>
+        string fileType;
+
+        /// <summary>PTX target version</summary>
+        string targetVersion;
+
         /// <summary>txtSrc.txt has some unsaved changes.</summary>
         bool unsavedChanges;
 
@@ -61,7 +67,7 @@ namespace CudaPAD
         string VisualStudioVCVarsAllPath = "";
 
         /// <summary>The path to the temp directory for CudaPAD.</summary>
-        readonly string TEMP_PATH;
+        string TEMP_PATH;
 
         /// <summary>The file name of the currently open file.(if any)</summary>
         string curOpenCudaFile = "";
@@ -77,13 +83,13 @@ namespace CudaPAD
         Timer changeTimer = new Timer();
 
         /// <summary>Contains a list of words or registers to highlight Key:Search_Word Val:Color.</summary>
-        Dictionary<string,int> WordsToHighlight = new Dictionary<string, int>();
+        Dictionary<string, int> WordsToHighlight = new Dictionary<string, int>();
 
-        Regex cleanupRegEx; 
+        Regex cleanupRegEx;
 
         public MainForm()
         {
-            var vsPath = VS_Tools.GetVSPath(avoidPrereleases:true, requiredWorkload: "NativeDesktop");
+            var vsPath = VS_Tools.GetVSPath(avoidPrereleases: true, requiredWorkload: "NativeDesktop");
 
             if (File.Exists(vsPath + @"\VC\bin\cl.exe") && File.Exists(vsPath + @"\VC\vcvarsall.bat")) //VS 2010,2013,2015
                 VisualStudioVCVarsAllPath = vsPath + @"\VC\vcvarsall.bat";
@@ -105,21 +111,21 @@ namespace CudaPAD
                 throw new SystemException("Environment Variable 'TEMP' does not exists.");
 
             // Make sure the folder cupad09 folder exists
-            TEMP_PATH = system_temp_folder + @"\cupad09\";
+            TEMP_PATH = AppDomain.CurrentDomain.BaseDirectory + @"cudaPadFiles_";
             if (!Directory.Exists(TEMP_PATH))
                 Directory.CreateDirectory(TEMP_PATH);
             else //folder already exists
-                foreach (string filename in new string[] { 
-                    "data.cubin", 
-                    "data.ptx", 
-                    "rtcof.dat", 
-                    "rtcof.bat", 
-                    "data.cu", 
-                    "info.txt", 
-                    "SASS.txt", 
-                    "data.cudafe1.c", 
+                foreach (string filename in new string[] {
+                    "data.cubin",
+                    "data.ptx",
+                    "rtcof.dat",
+                    "rtcof.bat",
+                    "data.cu",
+                    "info.txt",
+                    "SASS.txt",
+                    "data.cudafe1.c",
                     "data.cudafe1.stub.c",
-                    "data.cudafe2.c", 
+                    "data.cudafe2.c",
                     "data.cudafe2.stub.c",
                     "data.cudafe1.cpp" ,
                     "data.cpp1.i" ,
@@ -141,25 +147,25 @@ namespace CudaPAD
                     "data.cpp4.ii" ,
                     "data.cpp4.ii.res" ,
                     "data.cpp5.ii" ,
-                    "data.cpp5.ii.res" 
+                    "data.cpp5.ii.res"
                 })
 
-            if (File.Exists(TEMP_PATH + @"\" + filename))
-                File.Delete(TEMP_PATH + filename);
+                    if (File.Exists(TEMP_PATH + @"\" + filename))
+                        File.Delete(TEMP_PATH + filename);
 
 
             // Initialize some random stuff
             InitializeComponent();
             Icon = Properties.Resources.PTXIcon48x48x8Only;
             SetPanelSize();
-            cleanupRegEx = new Regex( 
+            cleanupRegEx = new Regex(
                 // @"; *|"                              // remove ";"
                 @"[\t ]*//<loop> .*\r\n|"               // remove unneeded comment
                 + @"[\t ]*//.*__cudaparm.*(?=\r\n)|"    // remove unneeded comment
                 + @" id:\d+|\+0(?=\])|"                 // remove unneeded id: comments
                 + @"[\t ]*//[\t ]*(?=\r\n)|"            // remove empty "//" comments 
                 + @"((?<=\r\n[A-Z]+\d+_\d+:)\r\n)|"     // remove return key after label (added 1/24/2016)
-                + @"%|"                                 // remove "%" (added 1/17/2016)
+ //               + @"%|"                                 // remove "%" (added 1/17/2016)
                 + @"[\t ]\.file[\t ]\d+[\t ]\"".*(?=\r\n)|" // remove 	.file	1 "C:\\....."
                 + @"\r\n[\t ]*\r\n[\t ]*(?=\r\n)|"      // remove two blank lines in a row (added 1/24/2016)
                 + @"__cudaparm_\w+(?=_\w+)|"            // shorten __cudaparam_
@@ -178,6 +184,7 @@ namespace CudaPAD
 
             lastTextBoxSelected = txtSrc;
 
+            checkFileType();
             BuildNvccBatchFile();
 
             process.StartInfo.FileName = TEMP_PATH + @"\rtcof.bat";
@@ -190,56 +197,14 @@ namespace CudaPAD
                 if (!string.IsNullOrEmpty(curOpenCudaFile))
                     break;
             }
-            if (string.IsNullOrEmpty(curOpenCudaFile))
-            {
-                StringBuilder sb = new StringBuilder(2000);
-                sb.AppendLine(@"/* Welcome to CudaPAD. */");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"//a modified version of the timedReduction example from NVidia's API");
-                sb.AppendLine(@"extern ""C"" __global__ void timedReduction(const float * input, float * output, clock_t * timer)");
-                sb.AppendLine(@"{");
-                sb.AppendLine(@"    extern __shared__ float shared[];");
-                sb.AppendLine(@"    const char* some_string = ""some unused text"";");
-                sb.AppendLine(@"    const int tid = threadIdx.x;");
-                sb.AppendLine(@"    const int bid = blockIdx.x;");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"    if (tid == 0) timer[bid] = clock();");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"    // Copy input");
-                sb.AppendLine(@"    shared[tid] = input[tid];");
-                sb.AppendLine(@"    shared[tid + blockDim.x] = input[tid + blockDim.x];");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"    // Perform reduction to find minimum.");
-                sb.AppendLine(@"    for(int d = blockDim.x; d > 0; d /= 2)");
-                sb.AppendLine(@"    {");
-                sb.AppendLine(@"        __syncthreads();");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"        if (tid < d)");
-                sb.AppendLine(@"        {");
-                sb.AppendLine(@"            float f0 = shared[tid];");
-                sb.AppendLine(@"            float f1 = shared[tid + d];");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"            if (f1 < f0) {");
-                sb.AppendLine(@"                shared[tid] = f1;");
-                sb.AppendLine(@"            }");
-                sb.AppendLine(@"        }");
-                sb.AppendLine(@"    }");
-                sb.AppendLine(@"");
-                sb.AppendLine(@"    // Write result");
-                sb.AppendLine(@"    if (tid == 0) output[bid] = shared[0];");
-                sb.AppendLine(@"    __syncthreads();");
-                sb.AppendLine(@"    if (tid == 0) timer[bid+gridDim.x] = clock();");
-                sb.AppendLine(@"}");
-                txtSrc.AppendText(sb.ToString());
-            }
 
             txtDst.CurrentPos = 3;
             LinesEnabled = true;
 
-            txtSrc.MouseWheel += delegate(object sender, MouseEventArgs e) { ReDrawLines(); };
-            txtDst.MouseWheel += delegate(object sender, MouseEventArgs e) { ReDrawLines(); };
+            txtSrc.MouseWheel += delegate (object sender, MouseEventArgs e) { ReDrawLines(); };
+            txtDst.MouseWheel += delegate (object sender, MouseEventArgs e) { ReDrawLines(); };
 
-            changeTimer.Interval = 500;
+            changeTimer.Interval = 1000;
             changeTimer.Enabled = true;
             changeTimer.Tick += changeTimer_Tick;
 
@@ -260,14 +225,21 @@ namespace CudaPAD
             + @" (?=[\=\,\;\/\{\}\+\-\*\)\>\<])|" // spaceBeforeCharEx   
             + @"[ \t](?=[ \t]+)|"       // if a space followed by another space
             + @"\t";                    // tabsEx
-            
+
             const string RegExNoNewline = RegExWithNewline + @"|[\r\n][\r\n\t ]*"; // empty lines
 
-            regExCleaner = new Regex(removeCarrageReturns?RegExNoNewline: RegExWithNewline, RegexOptions.Compiled);
+            regExCleaner = new Regex(removeCarrageReturns ? RegExNoNewline : RegExWithNewline, RegexOptions.Compiled);
         }
 
-
         private void BuildNvccBatchFile()
+        {
+            if (this.fileType == "CUDA")
+                BuildNvccBatchFile_CUDA();
+            if (this.fileType == "PTX")
+                BuildNvccBatchFile_PTX();
+        }
+
+        private void BuildNvccBatchFile_CUDA()
         {
             StringBuilder options = new StringBuilder();
 
@@ -291,7 +263,7 @@ namespace CudaPAD
             if (precSqrtprecsqrtToolStripMenuItem.Enabled)
                 options.Append("--prec-sqrt " + (precSqrtprecsqrtToolStripMenuItem.Checked ? "true " : "false "));
             if (fusedMultAddfmadToolStripMenuItem.Enabled)
-                options.Append("--fmad " + (fusedMultAddfmadToolStripMenuItem.Checked ? "true " : "false ")); 
+                options.Append("--fmad " + (fusedMultAddfmadToolStripMenuItem.Checked ? "true " : "false "));
             if (relocatableDeviceCodeToolStripMenuItem.Enabled)
                 options.Append("--relocatable-device-code " + (relocatableDeviceCodeToolStripMenuItem.Checked ? "true " : "false "));
             foreach (ToolStripMenuItem mi in architectureToolStripMenuItem.DropDownItems)
@@ -302,23 +274,74 @@ namespace CudaPAD
                 }
 
             ///////// Create command line script file in temp folder ///////////
-            StreamWriter sw = new StreamWriter(TEMP_PATH + @"\rtcof.bat");
-            //to add other options we need to make this a full compile with a main
-            sw.WriteLine("REM This script is...");
-            sw.WriteLine("REM  - run on each change in the source code.");
-            sw.WriteLine("REM  - over-written whenever any settings are modified in CudaPAD.");
-            sw.WriteLine("");
-            sw.WriteLine(@"call """ + VisualStudioVCVarsAllPath + @"""");
-            sw.WriteLine("del data.cubin");
-            sw.WriteLine(@"set path=%CUDA_PATH%\bin;%path%");
-            sw.WriteLine(@"nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" " 
-                + options + " data.cu  2>rtcof.dat >info.txt "); //-Xptxas=""-v"" shows reg usage
-            sw.WriteLine(@"echo nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" "
-                + options + "data.cu  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
-            sw.WriteLine("ren data.*.cubin data.cubin");
-            if (cboOutType.Text == "SASS")
-                sw.WriteLine("cuobjdump -sass data.cubin > SASS.txt");
-            sw.Flush(); sw.Close();
+            using (StreamWriter sw = new StreamWriter(TEMP_PATH + @"\rtcof.bat"))
+            {
+                //to add other options we need to make this a full compile with a main
+                sw.WriteLine("REM This script is...");
+                sw.WriteLine("REM  - run on each change in the source code.");
+                sw.WriteLine("REM  - over-written whenever any settings are modified in CudaPAD.");
+                sw.WriteLine("");
+                sw.WriteLine(@"call """ + VisualStudioVCVarsAllPath + @"""");
+                sw.WriteLine("del data.cubin");
+                sw.WriteLine(@"set path=%CUDA_PATH%\bin;%path%");
+                sw.WriteLine(@"nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" "
+                    + options + " data.cu  2>rtcof.dat >info.txt "); //-Xptxas=""-v"" shows reg usage
+                sw.WriteLine(@"echo nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" "
+                    + options + "data.cu  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
+                sw.WriteLine("ren data.*.cubin data.cubin");
+                if (cboOutType.Text == "SASS")
+                    sw.WriteLine("cuobjdump -sass data.cubin > SASS.txt");
+            }
+        }
+
+        private void BuildNvccBatchFile_PTX()
+        {
+            StringBuilder options = new StringBuilder();
+
+            if (useFastMathToolStripMenuItem.Enabled)
+                if (useFastMathToolStripMenuItem.Checked)
+                    options.Append("--use_fast_math ");
+            if (!defaultToolStripMenuItem.Checked)
+                foreach (ToolStripMenuItem mi in optimizeToolStripMenuItem.DropDownItems)
+                    if (mi.Checked)
+                    {
+                        options.Append("-Xptxas=\"" + mi.Tag.ToString() + "\" ");
+                        break;
+                    }
+            if (deviceDebugToolStripMenuItem.Enabled)
+                if (deviceDebugToolStripMenuItem.Checked)
+                    options.Append("--device-debug ");
+            if (fTZFloatToZeroToolStripMenuItem.Enabled)
+                options.Append("--ftz " + (fTZFloatToZeroToolStripMenuItem.Checked ? "true " : "false "));
+            if (precDIVToolStripMenuItem.Enabled)
+                options.Append("--prec-div " + (precDIVToolStripMenuItem.Checked ? "true " : "false "));
+            if (precSqrtprecsqrtToolStripMenuItem.Enabled)
+                options.Append("--prec-sqrt " + (precSqrtprecsqrtToolStripMenuItem.Checked ? "true " : "false "));
+            if (fusedMultAddfmadToolStripMenuItem.Enabled)
+                options.Append("--fmad " + (fusedMultAddfmadToolStripMenuItem.Checked ? "true " : "false "));
+            if (relocatableDeviceCodeToolStripMenuItem.Enabled)
+                options.Append("--relocatable-device-code " + (relocatableDeviceCodeToolStripMenuItem.Checked ? "true " : "false "));
+            options.Append("-arch " + targetVersion + " ");
+
+            ///////// Create command line script file in temp folder ///////////
+            using (StreamWriter sw = new StreamWriter(TEMP_PATH + @"\rtcof.bat"))
+            {
+                //to add other options we need to make this a full compile with a main
+                sw.WriteLine("REM This script is...");
+                sw.WriteLine("REM  - run on each change in the source code.");
+                sw.WriteLine("REM  - over-written whenever any settings are modified in CudaPAD.");
+                sw.WriteLine("");
+                sw.WriteLine(@"call """ + VisualStudioVCVarsAllPath + @"""");
+                sw.WriteLine("del data.cubin");
+                sw.WriteLine(@"set path=%CUDA_PATH%\bin;%path%");
+                sw.WriteLine(@"nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" "
+                    + options + " data.ptx  2>rtcof.dat >info.txt "); //-Xptxas=""-v"" shows reg usage
+                sw.WriteLine(@"echo nvcc.exe -keep -cubin --generate-line-info -Xptxas=""-v"" "
+                    + options + " data.ptx  2>>rtcof.dat >>info.txt "); //-Xptxas=""-v"" shows reg usage
+                sw.WriteLine("ren data.*.cubin data.cubin");
+                if (cboOutType.Text == "SASS")
+                    sw.WriteLine("cuobjdump -sass data.cubin > SASS.txt");
+            }
         }
 
         /// <summary>
@@ -329,18 +352,34 @@ namespace CudaPAD
             changeTimer.Stop();
             changeTimer.Start();
             unsavedChanges = true;
+
+            checkFileType();
         }
-         
+        private void checkFileType()
+        {
+            if (Regex.Match(txtSrc.Text, @"\.version").Success)
+            {
+                txtSrc.ConfigurationManager.Language = "ptx";
+                fileType = "PTX";
+                targetVersion = Regex.Match(txtSrc.Text, @"\.target\s+(sm_\d+)").Groups[1].Value;
+            }
+            else
+            {
+                txtSrc.ConfigurationManager.Language = "cu";
+                fileType = "CUDA";
+            }
+        }
+
         void changeTimer_Tick(object sender, EventArgs e)
         {
-            changeTimer.Stop(); 
-            
+            changeTimer.Stop();
+
             string cleaned = regExCleaner.Replace(txtSrc.Text, "${1}");
             if (lastCleanedSrc == cleaned)
                 return;
 
             // sometimes copy and paste will clear the screen; this prevents lastCleanedSrc from being set to that empty page
-            if (cleaned.Length < 8) 
+            if (cleaned.Length < 8)
                 return;
 
             lastCleanedSrc = cleaned;
@@ -351,6 +390,16 @@ namespace CudaPAD
 
         /// <summary>Saves the Cuda code(left panel) to a file and then triggers the compile timer.</summary>
         private void SaveSrcAndExec()
+        {
+            if (txtSrc.Text == "")
+                return;
+            if (this.fileType == "CUDA") 
+                SaveSrcAndExec_CUDA();
+            if (this.fileType == "PTX")
+                SaveSrcAndExec_PTX();
+        }
+
+        private void SaveSrcAndExec_CUDA()
         {
             if (compilerTimer.IsRunning)
             {
@@ -366,8 +415,8 @@ namespace CudaPAD
 
             lastCompiledCleanedSrc = lastCleanedSrc;
 
-            StreamWriter sw = new StreamWriter(TEMP_PATH + @"\data.cu");
-            sw.Write(txtSrc.Text); sw.Flush(); sw.Close();
+            using (StreamWriter sw = new StreamWriter(TEMP_PATH + @"\data.cu"))
+                sw.Write(txtSrc.Text);
 
             compilerTimer.Restart();
 
@@ -376,7 +425,34 @@ namespace CudaPAD
             compileStatus.Text = "Working";
             ClearLines();
         }
-                
+
+        private void SaveSrcAndExec_PTX()
+        {
+            if (compilerTimer.IsRunning)
+            {
+                subsequentUpdateNeeded = true;
+                return;
+            }
+
+            if (cboOutType.Text == "CODE")
+            {
+                txtDst.Text = lastCleanedSrc;
+                return;
+            }
+
+            lastCompiledCleanedSrc = lastCleanedSrc;
+
+            using (StreamWriter sw = new StreamWriter(TEMP_PATH + @"\data.ptx"))
+                sw.Write(txtSrc.Text);
+
+            compilerTimer.Restart();
+
+            process.Start();
+            compileStatus.BackColor = Color.DarkOrange;
+            compileStatus.Text = "Working";
+            ClearLines();
+        }
+
         /// <summary>Parses out the each error from cuda.out and writes it to the error list. It also filters out duplicates.</summary>
         public void AddItemToListLog(Match errorMatch)
         {
@@ -384,14 +460,14 @@ namespace CudaPAD
             s[0] = "";
             s[1] = errorMatch.Groups["line"].Value;
             s[2] = errorMatch.Groups["msg"].Value;
-            
+
             ListViewItem listViewItem1 = new ListViewItem(s);
             if (errorMatch.Groups["error"].Value == "error")
                 listViewItem1.ImageIndex = 1;
             else
                 listViewItem1.ImageIndex = 0;
 
-                // Set the text in the control
+            // Set the text in the control
             if (listLog.InvokeRequired)
                 listLog.Invoke((MethodInvoker)delegate { listLog.Items.Add(listViewItem1); });
             else
@@ -403,15 +479,28 @@ namespace CudaPAD
         {
             //make sure PTX edit warning is removed
             lblPTXWarning.Visible = false;
-            
+
             compilerTimer.Stop();
             txtCompileTime.Text = compilerTimer.ElapsedMilliseconds.ToString() + " ms";
 
-            string logInfo;
-            using (StreamReader sr = new StreamReader(TEMP_PATH + @"\info.txt"))
+            string logInfo = null;
+            const int NumberOfRetries = 10;
+            const int DelayOnRetry = 100;
+
+            for (int i = 1; i <= NumberOfRetries; ++i) 
             {
-                logInfo = sr.ReadToEnd();
+                try 
+                {
+                    using (StreamReader sr = new StreamReader(TEMP_PATH + @"\info.txt"))
+                        logInfo = sr.ReadToEnd();
+                    break;
+                }
+                catch
+                {
+                    System.Threading.Thread.Sleep(DelayOnRetry);
+                }
             }
+            
 
             ///////// Lets update the compile info box /////////////
             Regex infoCleaner = new Regex(
@@ -450,10 +539,19 @@ namespace CudaPAD
 
             ///////////LETS UPDATE THE ERROR LIST LOG/////////////
             // read the file
-            string logOut;
-            using (StreamReader sr = new StreamReader(TEMP_PATH + @"\rtcof.dat"))
+            string logOut = null;
+            for (int i = 1; i <= NumberOfRetries; ++i)
             {
-                logOut = sr.ReadToEnd();
+                try
+                {
+                    using (StreamReader sr = new StreamReader(TEMP_PATH + @"\rtcof.dat"))
+                        logOut = sr.ReadToEnd();
+                    break;
+                }
+                catch
+                {
+                    System.Threading.Thread.Sleep(DelayOnRetry);
+                }
             }
 
             // add the items to the list
@@ -506,22 +604,20 @@ namespace CudaPAD
                 {
                     // First read in the PTX file output file from nvcc.exe
                     string ptxOutput = "";
-                    try
+                    for (int i = 1; i <= NumberOfRetries; ++i)
                     {
-                        using (StreamReader sr = new StreamReader(TEMP_PATH + @"\data.ptx"))
+                        try
                         {
-                            ptxOutput = sr.ReadToEnd();
+                            using (StreamReader sr = new StreamReader(TEMP_PATH + @"\data.ptx"))
+                                ptxOutput = sr.ReadToEnd();
+                            break;
+                        }
+                        catch
+                        {
+                            System.Threading.Thread.Sleep(DelayOnRetry);
                         }
                     }
-                    catch (FileNotFoundException)
-                    {
-                        MessageBox.Show("data.ptx was not found. Make sure Cuda is installed and %CUDA_PATH%\\bin\\nvcc.exe exists.");
-                    }
-                    catch (Exception er)
-                    {
-                        MessageBox.Show("Error loading " + TEMP_PATH + @"\data.ptx." +  er.Message);
-                    }
-
+                   
                     // Remove and of the easy guide lines because we will need to re-draw them.
                     linesInfo.Clear();
 
@@ -612,8 +708,8 @@ namespace CudaPAD
 
                     try 
                     {
-                        StreamReader SASSReader = new StreamReader(TEMP_PATH + @"\SASS.txt");
-                        SASS_body = SASSReader.ReadToEnd(); SASSReader.Close();
+                        using (StreamReader SASSReader = new StreamReader(TEMP_PATH + @"\SASS.txt"))
+                            SASS_body = SASSReader.ReadToEnd();
                     }
                     catch (Exception)
                     {
@@ -974,9 +1070,16 @@ namespace CudaPAD
                     {
                         using (StreamReader sr = new StreamReader(arg))
                         {
+                            txtSrc.Text = "";
                             txtSrc.AppendText(sr.ReadToEnd());
                         }
                         curOpenCudaFile = arg;
+                        TEMP_PATH = Path.GetDirectoryName(arg) + @"\cudaPadFiles_" + Path.GetFileNameWithoutExtension(arg); 
+                        Directory.CreateDirectory(TEMP_PATH);
+                        checkFileType();
+                        BuildNvccBatchFile();
+                        process.StartInfo.FileName = TEMP_PATH + @"\rtcof.bat";
+                        process.StartInfo.WorkingDirectory = TEMP_PATH;
                     }
                     catch (Exception e)
                     {
@@ -1191,6 +1294,9 @@ namespace CudaPAD
 
             if (DialogResult.OK == openFileDialog1.ShowDialog())
                 OpenFile(openFileDialog1.FileName);
+
+            this.txtSrc.TextChanged += new System.EventHandler(this.txtSrc_TextChanged);
+            this.txtDst.Text = "";
         }
 
         private void undoToolStripMenuItem_Click(object sender, EventArgs e)
