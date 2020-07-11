@@ -222,7 +222,8 @@ Here are some wish list items I have that may or may not be added in the future:
 
 ## History
 
-*   Dec 2009 – Initially built
+*   Dec 2008 – Initially built
+*   July 2008 - Build Cudapad.com website at a group project while at CSUEB - it remained up on year until it expired.
 *   Jan 2013 – Changed the code textbox to use ScintillaNET for better syntax highlighting
 *   Nov 2014 – Updated for NVidia Cuda 6.0/6.5
 *   June 2015 – Code released to the public; changed to MIT License; updated for Cuda 6.5/7.0
