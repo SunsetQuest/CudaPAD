@@ -1,6 +1,6 @@
 ﻿// CudaPAD PTX/SASS viewer for NVidia's Cuda
 // This projected is licensed under the terms of the MIT license.
-// Copyright (c) 2009, 2013, 2014, 2015, 2016 Ryan S. White
+// Copyright (c) 2009, 2013, 2014, 2015, 2016 Ryan S. White 
 
 using System;
 using System.Collections.Generic;
